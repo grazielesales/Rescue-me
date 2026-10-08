@@ -1,0 +1,8 @@
+
+.godot/
+*.translation
+export_presets.cfg
+__MACOSX/
+.DS_Store
+COUPON.*
+*.url
