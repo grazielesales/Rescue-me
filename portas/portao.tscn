@@ -1,0 +1,104 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://portas/portao.gd" id="1_door"]
+[ext_resource type="Texture2D" uid="uid://bnaio6b1nhery" path="res://tile/Tiled_files/doors_lever_chest_animation.png" id="2_tex"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_portao0"]
+atlas = ExtResource("2_tex")
+region = Rect2(0, 0, 32, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_portao1"]
+atlas = ExtResource("2_tex")
+region = Rect2(0, 48, 32, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_portao2"]
+atlas = ExtResource("2_tex")
+region = Rect2(0, 96, 32, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_portao3"]
+atlas = ExtResource("2_tex")
+region = Rect2(0, 144, 32, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_portao4"]
+atlas = ExtResource("2_tex")
+region = Rect2(0, 192, 32, 48)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_portao"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_portao4")
+},
+{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_portao3")
+},
+{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_portao2")
+},
+{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_portao1")
+},
+{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_portao0")
+}],
+"loop": false,
+"name": &"closing",
+"speed": 14.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_portao0")
+},
+{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_portao1")
+},
+{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_portao2")
+},
+{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_portao3")
+},
+{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_portao4")
+}],
+"loop": false,
+"name": &"opening",
+"speed": 14.0
+}]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_bloqueio"]
+size = Vector2(34, 27.25)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_area"]
+size = Vector2(60, 60)
+
+[node name="portao" type="StaticBody2D"]
+y_sort_enabled = true
+script = ExtResource("1_door")
+editor_description = "Origem = centro do sprite 32x48. Para um vão de 2 tiles nas colunas X e X+1 com o arco na linha L: posição = (X*16+16, L*16+19)."
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+z_index = -1
+position = Vector2(0, 0)
+sprite_frames = SubResource("SpriteFrames_portao")
+animation = &"closing"
+frame = 4
+frame_progress = 1.0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, 10.4)
+shape = SubResource("RectangleShape2D_bloqueio")
+
+[node name="Area2D" type="Area2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D"]
+position = Vector2(0, 10)
+shape = SubResource("RectangleShape2D_area")
