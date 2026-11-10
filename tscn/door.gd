@@ -9,7 +9,7 @@ func _ready():
 	area.body_exited.connect(_on_body_exited)
 
 func _on_body_entered(body):
-	print("Entrou: linda grazi ", body.name)
+	print("Entrou:", body.name)
 	if body.is_in_group("player"):
 		sprite.play("opening")
 		collision.set_deferred("disabled", true)
