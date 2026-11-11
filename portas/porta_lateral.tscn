@@ -1,0 +1,92 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" uid="uid://b2dmvqfayy5oo" path="res://tscn/door.gd" id="1_door"]
+[ext_resource type="Texture2D" path="res://portas/porta_lateral.png" id="2_tex"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_porta_lateral0"]
+atlas = ExtResource("2_tex")
+region = Rect2(0, 0, 16, 36)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_porta_lateral1"]
+atlas = ExtResource("2_tex")
+region = Rect2(16, 0, 16, 36)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_porta_lateral2"]
+atlas = ExtResource("2_tex")
+region = Rect2(32, 0, 16, 36)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_porta_lateral3"]
+atlas = ExtResource("2_tex")
+region = Rect2(48, 0, 16, 36)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_porta_lateral"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_porta_lateral3")
+},
+{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_porta_lateral2")
+},
+{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_porta_lateral1")
+},
+{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_porta_lateral0")
+}],
+"loop": false,
+"name": &"closing",
+"speed": 14.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_porta_lateral0")
+},
+{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_porta_lateral1")
+},
+{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_porta_lateral2")
+},
+{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_porta_lateral3")
+}],
+"loop": false,
+"name": &"opening",
+"speed": 14.0
+}]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_bloqueio"]
+size = Vector2(12, 56)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_area"]
+size = Vector2(56, 44)
+
+[node name="porta_lateral" type="StaticBody2D"]
+y_sort_enabled = true
+script = ExtResource("1_door")
+editor_description = "Porta em parede vertical. Origem = centro do vão de 1x2 tiles: (X*16+8, L*16+16), onde L é a linha de cima do vão."
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+z_index = -1
+position = Vector2(0, 0)
+sprite_frames = SubResource("SpriteFrames_porta_lateral")
+animation = &"closing"
+frame = 3
+frame_progress = 1.0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -12)
+shape = SubResource("RectangleShape2D_bloqueio")
+
+[node name="Area2D" type="Area2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D"]
+position = Vector2(0, 0)
+shape = SubResource("RectangleShape2D_area")
