@@ -66,8 +66,8 @@ O contorno do prédio é o mesmo do 1º andar, mas o miolo foi redesenhado:
 | **Refúgio** (em cima da sala 1) | A única sala segura, com cama, baú e bilhete. |
 | **Laboratório** (em cima da sala de comando) | Arena com 2 criaturas, o desenho do filho e um relatório. A porta fica em outra posição e não há patamar. |
 | **Depósito** (sala nordeste) | Caminho opcional: aranha grande, baú e página de receita. |
-| **Salão** | Aberto, com 3 colunas de pedra que dividem os caminhos e fantasmas. |
-| **Ninho** (sudoeste) | Sala larga e baixa, com portão de grade, aranha grande e aranhas pequenas. |
+| **Salão** | Aberto, sem colunas no meio. |
+| **Ninho** (sudoeste) | Sala larga e baixa, com portão de grade e 5 aranhas pequenas. |
 | **Porão** e **Arena central** (sul) | Atrás de um paredão comprido, cada um com porta própria e ligados por uma porta lateral. |
 | **Sala do Feiticeiro espectral** (sudeste) | Entrada pela porta lateral da Arena. Guarda a escadaria para o 3º andar. |
 
