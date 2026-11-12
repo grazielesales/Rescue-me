@@ -3,7 +3,6 @@
 [ext_resource type="Script" uid="uid://b67lvpfe6byep" path="res://pai.gd" id="1_lrxtp"]
 [ext_resource type="Texture2D" uid="uid://dmfdxs78mgaxu" path="res://Modern tiles_Free/Old/idle_32x32_2.png" id="2_ugawo"]
 [ext_resource type="Texture2D" uid="uid://bpe1ywtfccfuy" path="res://Modern tiles_Free/Old/mv/Character_2_32x32_RPGMAKER.png" id="3_emuy8"]
-[ext_resource type="Texture2D" uid="uid://bl2nttikr6k7c" path="res://tocha/tocha.png" id="4_tocha"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_pj4q2"]
 atlas = ExtResource("2_ugawo")
@@ -126,7 +125,7 @@ animations = [{
 size = Vector2(10, 5)
 
 [sub_resource type="Gradient" id="Gradient_visao"]
-interpolation_mode = 1
+interpolation_mode = 2
 offsets = PackedFloat32Array(0, 0.5, 0.7, 0.86, 1)
 colors = PackedColorArray(1, 1, 1, 1, 0.72, 0.72, 0.72, 1, 0.42, 0.42, 0.42, 1, 0.16, 0.16, 0.16, 1, 0, 0, 0, 1)
 
@@ -138,22 +137,8 @@ fill = 1
 fill_from = Vector2(0.5, 0.5)
 fill_to = Vector2(1, 0.5)
 
-[sub_resource type="Gradient" id="Gradient_tocha"]
-interpolation_mode = 1
-offsets = PackedFloat32Array(0, 0.38, 0.55, 0.68, 0.8, 0.9, 1)
-colors = PackedColorArray(1, 1, 1, 1, 0.83, 0.83, 0.83, 1, 0.67, 0.67, 0.67, 1, 0.5, 0.5, 0.5, 1, 0.33, 0.33, 0.33, 1, 0.17, 0.17, 0.17, 1, 0, 0, 0, 1)
-
-[sub_resource type="GradientTexture2D" id="GradientTexture2D_tocha"]
-gradient = SubResource("Gradient_tocha")
-width = 256
-height = 256
-fill = 1
-fill_from = Vector2(0.5, 0.5)
-fill_to = Vector2(1, 0.5)
-
 [node name="pai" type="CharacterBody2D" unique_id=100439784]
 script = ExtResource("1_lrxtp")
-torch_light_texture = SubResource("GradientTexture2D_tocha")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=909581800]
 light_mask = 2
@@ -170,18 +155,6 @@ position_smoothing_enabled = true
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=907732761]
 position = Vector2(0, -2.5)
 shape = SubResource("RectangleShape2D_0duit")
-
-[node name="Tocha" type="Node2D" parent="." unique_id=1418230671]
-visible = false
-position = Vector2(-6, -9)
-scale = Vector2(0.5, 0.5)
-
-[node name="Sprite2D" type="Sprite2D" parent="Tocha" unique_id=1418230672]
-light_mask = 2
-texture = ExtResource("4_tocha")
-centered = false
-offset = Vector2(-5, -20)
-hframes = 4
 
 [node name="Visao" type="PointLight2D" parent="." unique_id=1418230673]
 position = Vector2(0, -12)

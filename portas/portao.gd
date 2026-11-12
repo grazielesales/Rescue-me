@@ -20,7 +20,12 @@ func _ready() -> void:
 
 
 func _on_body_entered(body: Node) -> void:
-	if not body.is_in_group("player") or _levantado:
+	if not body.is_in_group("player"):
+		return
+	if bloqueado:
+		Jogo.mostrar_mensagem("Trancado! Derrote todos os monstros da sala.", 1.5)
+		return
+	if _levantado:
 		return
 	if trancado:
 		Jogo.mostrar_mensagem(mensagem_trancado)
@@ -30,15 +35,35 @@ func _on_body_entered(body: Node) -> void:
 
 
 func _on_body_exited(body: Node) -> void:
-	if not body.is_in_group("player") or _levantado or trancado:
+	if not body.is_in_group("player") or _levantado or trancado or bloqueado:
 		return
 	sprite.play("closing")
 	collision.set_deferred("disabled", false)
+
+
+## Sala bloqueada (sala.gd, GDD 3.5): fecha o portão até a sala ser vencida.
+var bloqueado := false
+
+
+func bloquear() -> void:
+	bloqueado = true
+	if sprite.animation == "opening":
+		sprite.play("closing")
+	collision.set_deferred("disabled", false)
+
+
+func liberar() -> void:
+	bloqueado = false
+	if _levantado or (not trancado and Jogo._pai_ativo() and area.overlaps_body(Jogo.pai)):
+		sprite.play("opening")
+		collision.set_deferred("disabled", true)
 
 
 ## Chamado pela alavanca: levanta o portão e ele não fecha mais.
 func destrancar() -> void:
 	trancado = false
 	_levantado = true
+	if bloqueado:
+		return
 	sprite.play("opening")
 	collision.set_deferred("disabled", true)

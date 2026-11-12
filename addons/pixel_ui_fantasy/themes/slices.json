@@ -1,0 +1,224 @@
+{
+ "button_normal": [
+  5,
+  5,
+  5,
+  5
+ ],
+ "button_hover": [
+  5,
+  5,
+  5,
+  5
+ ],
+ "button_pressed": [
+  5,
+  5,
+  5,
+  5
+ ],
+ "button_disabled": [
+  5,
+  5,
+  5,
+  5
+ ],
+ "focus": [
+  4,
+  4,
+  4,
+  4
+ ],
+ "panel": [
+  6,
+  6,
+  6,
+  6
+ ],
+ "window": [
+  6,
+  19,
+  6,
+  6
+ ],
+ "panel_inset": [
+  5,
+  5,
+  5,
+  5
+ ],
+ "slot_common": [
+  5,
+  5,
+  5,
+  5
+ ],
+ "slot_uncommon": [
+  5,
+  5,
+  5,
+  5
+ ],
+ "slot_rare": [
+  5,
+  5,
+  5,
+  5
+ ],
+ "slot_epic": [
+  5,
+  5,
+  5,
+  5
+ ],
+ "slot_legendary": [
+  5,
+  5,
+  5,
+  5
+ ],
+ "portrait": [
+  9,
+  9,
+  9,
+  9
+ ],
+ "skill_slot": [
+  3,
+  3,
+  3,
+  3
+ ],
+ "skill_slot_active": [
+  3,
+  3,
+  3,
+  3
+ ],
+ "nameplate": [
+  5,
+  4,
+  5,
+  4
+ ],
+ "ribbon": [
+  9,
+  3,
+  9,
+  5
+ ],
+ "divider": [
+  8,
+  0,
+  8,
+  0
+ ],
+ "parchment": [
+  6,
+  9,
+  6,
+  9
+ ],
+ "tooltip": [
+  3,
+  3,
+  3,
+  3
+ ],
+ "line_edit": [
+  4,
+  4,
+  4,
+  4
+ ],
+ "slider": [
+  3,
+  2,
+  3,
+  2
+ ],
+ "slider_fill": [
+  3,
+  2,
+  3,
+  2
+ ],
+ "progress_bg": [
+  4,
+  3,
+  4,
+  3
+ ],
+ "progress_fill": [
+  5,
+  2,
+  5,
+  2
+ ],
+ "tab_selected": [
+  4,
+  4,
+  4,
+  1
+ ],
+ "tab_unselected": [
+  4,
+  5,
+  4,
+  2
+ ],
+ "tab_hover": [
+  4,
+  5,
+  4,
+  2
+ ],
+ "scroll": [
+  2,
+  2,
+  2,
+  2
+ ],
+ "scroll_grabber": [
+  2,
+  2,
+  2,
+  2
+ ],
+ "scroll_grabber_hover": [
+  2,
+  2,
+  2,
+  2
+ ],
+ "scroll_grabber_pressed": [
+  2,
+  2,
+  2,
+  2
+ ],
+ "menu_hover": [
+  2,
+  2,
+  2,
+  2
+ ],
+ "slot_selected": [
+  5,
+  5,
+  5,
+  5
+ ],
+ "key": [
+  4,
+  4,
+  4,
+  5
+ ],
+ "toast": [
+  6,
+  4,
+  4,
+  4
+ ]
+}

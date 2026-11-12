@@ -41,9 +41,11 @@ signal acendeu
 @export_group("Sala bloqueada (GDD 3.5)")
 ## Marca a sala como arena. Os inimigos dentro de `areas` são contados.
 @export var arena := false
-## Quando existir combate: fechar as portas ao entrar e só abrir quando todos
-## os inimigos da arena morrerem. Desligado por enquanto (não há combate).
-@export var trancar_ao_entrar := false
+## Arena: as portas (`portas`) fecham quando o Pai entra e só abrem quando
+## todos os inimigos da sala morrerem. Vencer a sala vira ponto de salvamento.
+@export var trancar_ao_entrar := true
+
+signal concluiu
 
 var acesa := false
 var _luzes: Array[PointLight2D] = []
@@ -52,6 +54,8 @@ var _inimigos: Array[Node] = []
 var _ruido := FastNoiseLite.new()
 var _tempo := randf() * 100.0
 var _acendendo := false
+var _trancada := false
+var concluida := false
 
 const TEX_LUZ := preload("res://salas/luz_sala.tres")
 const TEX_TAM := 64.0
@@ -102,7 +106,9 @@ func _ready() -> void:
 	set_process(false)
 	if acesa_no_inicio or Jogo.sala_visitada(_chave()):
 		acender(true)
+	set_physics_process(false)
 	if arena:
+		concluida = Jogo.sala_concluida(_chave())
 		_contar_inimigos.call_deferred()
 
 
@@ -164,6 +170,56 @@ func _contar_inimigos() -> void:
 	for n in get_tree().get_nodes_in_group("inimigos"):
 		if n is Node2D and contem(n.global_position):
 			_inimigos.append(n)
+			if n.has_signal("morreu"):
+				n.morreu.connect(_on_inimigo_morreu)
+	if arena and not concluida:
+		if _vivos() == 0:
+			concluida = true
+		elif trancar_ao_entrar:
+			set_physics_process(true)
+
+
+func _vivos() -> int:
+	return inimigos().filter(func(n): return n.is_in_group("inimigos")).size()
+
+
+## Espera o Pai entrar de vez (fora do vão da porta) para trancar.
+func _physics_process(_delta: float) -> void:
+	if Engine.is_editor_hint() or _trancada or concluida:
+		return
+	var pai: Node2D = Jogo.pai if Jogo._pai_ativo() else null
+	if pai == null or not contem(pai.global_position):
+		return
+	for caminho in portas:
+		var porta := get_node_or_null(caminho)
+		if porta and porta.has_node("Area2D") and porta.get_node("Area2D").overlaps_body(pai):
+			return
+	_trancar()
+
+
+func _trancar() -> void:
+	_trancada = true
+	set_physics_process(false)
+	for caminho in portas:
+		var porta := get_node_or_null(caminho)
+		if porta and porta.has_method("bloquear"):
+			porta.bloquear()
+	Jogo.mostrar_mensagem("As portas se fecharam! Derrote todos os monstros.")
+
+
+func _on_inimigo_morreu(_n: Node) -> void:
+	if concluida or _vivos() > 0:
+		return
+	concluida = true
+	set_physics_process(false)
+	_trancada = false
+	for caminho in portas:
+		var porta := get_node_or_null(caminho)
+		if porta and porta.has_method("liberar"):
+			porta.liberar()
+	var pai: Node2D = Jogo.pai if Jogo._pai_ativo() else null
+	Jogo.concluir_sala(_chave(), pai.global_position if pai else global_position)
+	concluiu.emit()
 
 
 func _chave() -> String:

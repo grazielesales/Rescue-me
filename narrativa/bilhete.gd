@@ -4,6 +4,9 @@ extends Sprite2D
 
 @export_multiline var texto := ""
 @export var raio := 22.0
+## Página do livro de receitas (GDD 4.2): id da receita que aparece no livro
+## ao ler (ex.: "adaga"). Vazio = bilhete comum.
+@export var receita := ""
 
 var _perto := false
 var _lendo := false
@@ -43,6 +46,8 @@ func _process(_delta: float) -> void:
 		if _lendo:
 			Jogo.esconder_dica()
 			Jogo.mostrar_texto(texto)
+			if receita != "":
+				Jogo.aprender_receita(receita)
 		else:
 			Jogo.esconder_texto()
 			Jogo.mostrar_dica("E: ler")

@@ -1,0 +1,17 @@
+[remap]
+
+importer="font_data_bmfont"
+type="FontFile"
+uid="uid://clnarbvdxc76s"
+path="res://.godot/imported/pixel_ui_fantasy_font.fnt-e1344d6bfc48b93f1176e9e242508861.fontdata"
+
+[deps]
+
+source_file="res://addons/pixel_ui_fantasy/font/pixel_ui_fantasy_font.fnt"
+dest_files=["res://.godot/imported/pixel_ui_fantasy_font.fnt-e1344d6bfc48b93f1176e9e242508861.fontdata"]
+
+[params]
+
+fallbacks=[]
+compress=true
+scaling_mode=2

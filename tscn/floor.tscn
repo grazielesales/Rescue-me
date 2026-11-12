@@ -4116,7 +4116,6 @@ position = Vector2(-78.999985, 33.74999)
 shape = SubResource("RectangleShape2D_0duit")
 
 [node name="Area2D" type="Area2D" parent="Props/door sala 2" unique_id=1563717158]
-position = Vector2(25.000034, 78.99999)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Props/door sala 2/Area2D" unique_id=828207720]
 visible = false
@@ -4264,7 +4263,6 @@ position = Vector2(318, -16.999992)
 script = ExtResource("40_inimigo")
 position = Vector2(23, 84.00001)
 tipo = "Aranha pequena"
-reacao_a_tocha = 1
 altura_pes = 12.0
 largura_corpo = 18.0
 
