@@ -2,6 +2,10 @@ extends CanvasLayer
 ## Autoload "Jogo": estado que precisa sobreviver à troca de andar e à morte
 ## (salas visitadas e concluídas, inventário, armas, receitas, ponto de
 ## salvamento) + fade, mensagens na tela, HUD e livro de receitas.
+##
+## Save em disco (user://save.json): grava sozinho quando o checkpoint muda
+## (definir_checkpoint) e ao fechar a janela. Ao abrir o jogo, continua do
+## save. Ctrl+Shift+N (só em build de desenvolvimento) apaga o save e recomeça.
 
 signal inventario_mudou
 signal armas_mudou
@@ -19,10 +23,11 @@ var pai: Node = null
 var nome_andar := ""
 ## material -> quantidade (GDD 4.1). Não se perde ao morrer (GDD 8.3).
 var inventario := {}
-## Armas que o Pai já tem (ids de Itens.ARMAS).
-var armas: Array[String] = ["cano"]
+## Armas que o Pai já tem (ids de Itens.ARMAS). Começa sem nenhuma: com os
+## atalhos vazios ele luta com socos (Itens.SEM_ARMA).
+var armas: Array[String] = []
 ## Atalhos 1, 2 e 3 (GDD 3.2). "" = vazio.
-var slots: Array[String] = ["cano", "", ""]
+var slots: Array[String] = ["", "", ""]
 var slot_atual := 0
 var curativos := 0
 var receitas_conhecidas := {}
@@ -40,6 +45,17 @@ var checkpoint := {}
 ## ao recomeçar e ao trocar de andar, até o Pai voltar e pegar.
 var drops := {}
 var _proximo_drop := 0
+## Marcas livres do jogo (chaves pegas, alavancas puxadas...). Valores simples:
+## bool, número ou texto. Vão no save. Use set_flag / get_flag.
+var flags := {}
+
+# --- save -------------------------------------------------------------------------
+## Sobe quando o formato do save mudar (e trate a diferença em _migrar_save).
+const VERSAO_SAVE := 1
+## Onde o save fica. Os testes trocam por outro arquivo.
+var caminho_save := "user://save.json"
+## true entre carregar o save na abertura e o primeiro andar abrir.
+var _save_pendente := false
 
 var _hud: CanvasLayer
 var _livro: CanvasLayer
@@ -50,6 +66,8 @@ var _fade: ColorRect
 var _titulo: Label
 var _msg: Label
 var _msg_tween: Tween
+## Quando a mensagem atual sai da tela (Time.get_ticks_msec).
+var _msg_ate := 0
 var _dica: Label
 var _painel: PanelContainer
 var _texto: Label
@@ -90,9 +108,7 @@ func _ready() -> void:
 	_painel.add_child(_texto)
 	add_child(_painel)
 
-	for r in Itens.RECEITAS:
-		if r.get("inicial", false):
-			receitas_conhecidas[r.id] = true
+	_estado_inicial()
 	_hud = preload("res://jogo/hud.gd").new()
 	add_child(_hud)
 	_livro = preload("res://jogo/livro.gd").new()
@@ -100,9 +116,32 @@ func _ready() -> void:
 	_inv = preload("res://jogo/inventario_ui.gd").new()
 	add_child(_inv)
 
+	# Fechar a janela passa por _notification (salva antes de sair).
+	get_tree().set_auto_accept_quit(false)
+	# Continua do save. Quem decide a troca de andar é o primeiro andar que
+	# abrir (andar.gd chama continuar_save()). Se o checkpoint for de outro
+	# andar, a tela já começa preta para o 1º andar não piscar antes da troca.
+	if carregar():
+		_save_pendente = true
+		if checkpoint.get("cena", "") not in ["", _cena_principal()]:
+			_fade.color.a = 1.0
+	_sem_andar_na_abertura.call_deferred()
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_CLOSE_REQUEST:
+		if not checkpoint.is_empty():
+			salvar()
+		get_tree().quit()
+
 
 func _unhandled_input(event: InputEvent) -> void:
 	if not event.is_pressed() or event.is_echo():
+		return
+	if OS.is_debug_build() and event is InputEventKey and event.keycode == KEY_N \
+			and event.ctrl_pressed and event.shift_pressed:
+		get_viewport().set_input_as_handled()
+		novo_jogo()
 		return
 	if _inv.visible:
 		return  # a tela do inventário cuida das próprias teclas
@@ -180,10 +219,19 @@ func pai_morreu() -> void:
 	_morrendo = false
 
 
-func concluir_sala(chave: String, pos: Vector2) -> void:
+## `aviso` = mostra "Sala vencida!" (só faz sentido se as portas trancaram).
+func concluir_sala(chave: String, pos: Vector2, aviso := true) -> void:
 	salas_concluidas[chave] = true
-	checkpoint = {"cena": cena_atual(), "pos": pos}
-	mostrar_mensagem("Sala vencida! As portas se destrancaram.")
+	definir_checkpoint({"cena": cena_atual(), "pos": pos})
+	if aviso:
+		mostrar_mensagem("Sala vencida! As portas se destrancaram.")
+
+
+## Muda o ponto de salvamento e grava o save em disco.
+## dados = {"cena", "pos"} ou {"cena", "escada"}.
+func definir_checkpoint(dados: Dictionary) -> void:
+	checkpoint = dados
+	salvar()
 
 
 func sala_concluida(chave: String) -> bool:
@@ -202,6 +250,245 @@ func registrar_morte(chave: String, tipo: String) -> void:
 
 func esta_morto(chave: String) -> bool:
 	return mortos.has(chave)
+
+
+# --- flags -------------------------------------------------------------------------
+
+## Guarda uma marca (ex.: set_flag("chave_porao", true)). Entra no próximo save.
+func set_flag(nome: String, valor: Variant) -> void:
+	flags[nome] = valor
+
+
+func get_flag(nome: String, padrao: Variant = null) -> Variant:
+	return flags.get(nome, padrao)
+
+
+## Grava agora, sem mudar o checkpoint (eventos de progresso: alavanca, baú,
+## arena vencida). Antes do primeiro checkpoint não há o que gravar.
+func salvar_progresso() -> void:
+	if not checkpoint.is_empty():
+		salvar()
+
+
+# --- save em disco -----------------------------------------------------------------
+
+## Estado de um jogo novo.
+func _estado_inicial() -> void:
+	salas_visitadas = {}
+	escada_de_chegada = ""
+	inventario = {}
+	armas.assign([])
+	slots.assign(["", "", ""])
+	slot_atual = 0
+	curativos = 0
+	receitas_conhecidas = {}
+	for r in Itens.RECEITAS:
+		if r.get("inicial", false):
+			receitas_conhecidas[r.id] = true
+	melhorias = {}
+	mortos = {}
+	salas_concluidas = {}
+	tipos_derrotados = {}
+	checkpoint = {}
+	drops = {}
+	_proximo_drop = 0
+	flags = {}
+
+
+func tem_save() -> bool:
+	return FileAccess.file_exists(caminho_save)
+
+
+func apagar_save() -> void:
+	if tem_save():
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(caminho_save))
+
+
+## Grava todo o estado em `caminho_save`. Escreve num .tmp e depois troca,
+## para um fechamento no meio da gravação não estragar o save anterior.
+func salvar() -> bool:
+	var cp := checkpoint.duplicate()
+	if cp.has("pos"):
+		cp.pos = _vec_para_json(cp.pos)
+	var drops_json := {}
+	for cena in drops:
+		var da_cena := {}
+		for id in drops[cena]:
+			var d: Dictionary = drops[cena][id]
+			da_cena[id] = {"item": d.item, "qtd": d.qtd, "pos": _vec_para_json(d.pos)}
+		drops_json[cena] = da_cena
+	var dados := {
+		"versao": VERSAO_SAVE,
+		"inventario": inventario,
+		"armas": armas,
+		"slots": slots,
+		"slot_atual": slot_atual,
+		"curativos": curativos,
+		"receitas_conhecidas": receitas_conhecidas.keys(),
+		"melhorias": melhorias.keys(),
+		"mortos": mortos.keys(),
+		"salas_visitadas": salas_visitadas.keys(),
+		"salas_concluidas": salas_concluidas.keys(),
+		"tipos_derrotados": tipos_derrotados.keys(),
+		"checkpoint": cp,
+		"drops": drops_json,
+		"proximo_drop": _proximo_drop,
+		"flags": flags,
+	}
+	var tmp := caminho_save + ".tmp"
+	var f := FileAccess.open(tmp, FileAccess.WRITE)
+	if f == null:
+		push_warning("Save: não deu para gravar %s (%s)" % [tmp, error_string(FileAccess.get_open_error())])
+		return false
+	f.store_string(JSON.stringify(dados, "\t"))
+	f.close()
+	var final := ProjectSettings.globalize_path(caminho_save)
+	if FileAccess.file_exists(caminho_save):
+		DirAccess.remove_absolute(final)
+	var err := DirAccess.rename_absolute(ProjectSettings.globalize_path(tmp), final)
+	if err != OK:
+		push_warning("Save: não deu para trocar o arquivo (%s)" % error_string(err))
+		return false
+	return true
+
+
+## Lê o save, se houver. Devolve true se carregou. Arquivo estragado ou de uma
+## versão mais nova do jogo: avisa, não apaga e começa do zero.
+func carregar() -> bool:
+	if not tem_save():
+		return false
+	var texto := FileAccess.get_file_as_string(caminho_save)
+	var dados: Variant = JSON.parse_string(texto)
+	if not dados is Dictionary or not dados.has("versao"):
+		push_warning("Save: %s está ilegível; começando do zero." % caminho_save)
+		return false
+	var versao := int(dados.versao)
+	if versao > VERSAO_SAVE:
+		push_warning("Save: versão %d é mais nova que a do jogo (%d); começando do zero." % [versao, VERSAO_SAVE])
+		return false
+	dados = _migrar_save(dados, versao)
+
+	_estado_inicial()
+	for m in dados.get("inventario", {}):
+		inventario[m] = int(dados.inventario[m])
+	# ids que não existem mais (ex.: o antigo "cano") são descartados
+	armas.assign(dados.get("armas", []).filter(func(a): return Itens.ARMAS.has(a) and a != Itens.SEM_ARMA))
+	slots.assign(["", "", ""])
+	var lidos: Array = dados.get("slots", [])
+	for i in mini(lidos.size(), 3):
+		if lidos[i] in armas:
+			slots[i] = lidos[i]
+	slot_atual = clampi(int(dados.get("slot_atual", 0)), 0, slots.size() - 1)
+	curativos = int(dados.get("curativos", 0))
+	for id in dados.get("receitas_conhecidas", []):
+		receitas_conhecidas[id] = true
+	melhorias = _conjunto(dados.get("melhorias", []))
+	mortos = _conjunto(dados.get("mortos", []))
+	salas_visitadas = _conjunto(dados.get("salas_visitadas", []))
+	salas_concluidas = _conjunto(dados.get("salas_concluidas", []))
+	tipos_derrotados = _conjunto(dados.get("tipos_derrotados", []))
+	checkpoint = dados.get("checkpoint", {})
+	if checkpoint.has("pos"):
+		checkpoint.pos = _vec_de_json(checkpoint.pos)
+	for cena in dados.get("drops", {}):
+		var da_cena := {}
+		for id in dados.drops[cena]:
+			var d: Dictionary = dados.drops[cena][id]
+			da_cena[id] = {"item": d.item, "qtd": int(d.qtd), "pos": _vec_de_json(d.pos)}
+		drops[cena] = da_cena
+	_proximo_drop = int(dados.get("proximo_drop", 0))
+	for nome in dados.get("flags", {}):
+		var v: Variant = dados.flags[nome]
+		# o JSON lê todo número como float; inteiros voltam a ser int
+		flags[nome] = int(v) if v is float and v == floorf(v) else v
+	inventario_mudou.emit()
+	armas_mudou.emit()
+	return true
+
+
+## Adapta saves de versões antigas ao formato atual. Hoje só existe a versão 1.
+func _migrar_save(dados: Dictionary, _versao: int) -> Dictionary:
+	return dados
+
+
+## Chamado pelo andar.gd no começo do _ready. Na abertura do jogo pela cena
+## principal, se o checkpoint salvo é de outro andar, troca para ele e devolve
+## true (o andar que abriu não deve fazer mais nada). No mesmo andar, devolve
+## false e o andar.gd põe o Pai no checkpoint como sempre. Rodar uma cena
+## solta (F6) carrega o estado, mas não troca de andar.
+func continuar_save(cena_do_andar: String) -> bool:
+	if not _save_pendente:
+		return false
+	_save_pendente = false
+	var alvo: String = checkpoint.get("cena", "")
+	if cena_do_andar != _cena_principal() or alvo in ["", cena_do_andar] \
+			or not ResourceLoader.exists(alvo):
+		_fade.color.a = 0.0
+		return false
+	_ir_para_save.call_deferred(alvo)
+	return true
+
+
+func _ir_para_save(alvo: String) -> void:
+	_trocando = true
+	get_tree().change_scene_to_file(alvo)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	await fade(0.0, 0.45)
+	_trocando = false
+
+
+## Abriu uma cena que não é andar (ex.: teste): não deixa a tela preta.
+func _sem_andar_na_abertura() -> void:
+	if _save_pendente:
+		_save_pendente = false
+		_fade.color.a = 0.0
+
+
+## Apaga o save e recomeça do 1º andar (Ctrl+Shift+N em desenvolvimento;
+## depois vai para o botão "Novo jogo" da tela inicial).
+func novo_jogo() -> void:
+	if _trocando:
+		return
+	_trocando = true
+	if _livro.visible:
+		_livro.fechar()
+	if _inv.visible:
+		_inv.fechar()
+	apagar_save()
+	await fade(1.0, 0.35)
+	_estado_inicial()
+	inventario_mudou.emit()
+	armas_mudou.emit()
+	get_tree().change_scene_to_file(_cena_principal())
+	await get_tree().process_frame
+	await get_tree().process_frame
+	_morrendo = false
+	await fade(0.0, 0.45)
+	_trocando = false
+	mostrar_mensagem("Novo jogo (save apagado).")
+
+
+func _cena_principal() -> String:
+	var s: String = ProjectSettings.get_setting("application/run/main_scene", "")
+	if s.begins_with("uid://"):
+		return ResourceUID.get_id_path(ResourceUID.text_to_id(s))
+	return s
+
+
+func _conjunto(lista: Array) -> Dictionary:
+	var d := {}
+	for k in lista:
+		d[k] = true
+	return d
+
+
+func _vec_para_json(v: Vector2) -> Array:
+	return [v.x, v.y]
+
+
+func _vec_de_json(a: Variant) -> Vector2:
+	return Vector2(float(a[0]), float(a[1])) if a is Array and a.size() >= 2 else Vector2.ZERO
 
 
 # --- materiais no chão -------------------------------------------------------------
@@ -327,7 +614,7 @@ func id_arma_atual() -> String:
 	for s in slots:
 		if s != "":
 			return s
-	return "cano"
+	return Itens.SEM_ARMA
 
 
 func arma_atual() -> Dictionary:
@@ -415,7 +702,14 @@ func mostrar_titulo(texto: String) -> void:
 
 
 ## Mensagem curta no centro-baixo da tela (GDD 7.4).
-func mostrar_mensagem(texto: String, duracao := 2.5) -> void:
+## `depois_da_atual` = espera a mensagem que está na tela terminar, em vez de
+## cobrir (ex.: a arena trancando logo depois do baú dar a chave).
+func mostrar_mensagem(texto: String, duracao := 2.5, depois_da_atual := false) -> void:
+	var agora := Time.get_ticks_msec()
+	if depois_da_atual and agora < _msg_ate:
+		_msg_ate += int((duracao + 0.6) * 1000.0)
+		await get_tree().create_timer((_msg_ate - agora) / 1000.0 - duracao - 0.6).timeout
+	_msg_ate = maxi(_msg_ate, Time.get_ticks_msec() + int((duracao + 0.6) * 1000.0))
 	_msg.text = texto
 	if _msg_tween:
 		_msg_tween.kill()

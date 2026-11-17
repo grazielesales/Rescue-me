@@ -14,6 +14,10 @@ const _DP := "res://assets/Dungeons and Pixels #U2014 Free Demo/"
 const _GUERREIRO := "res://assets/itens-armas/warrior-items__asset.png"
 const _MAGO := "res://assets/itens-armas/xevin-wizard-items__asset.png"
 const TAM_ICONE := 16
+## Cajados (32x32, um por arquivo, na diagonal como os ícones das armas).
+const _STAFFS := "res://assets/staffs/"
+## Arma usada quando os três atalhos estão vazios: o Pai luta com as mãos.
+const SEM_ARMA := "socos"
 
 ## Materiais (GDD 4.1). "cor" tinge o ícone.
 const MATERIAIS := {
@@ -29,10 +33,14 @@ const MATERIAIS := {
 }
 
 ## Armas (GDD 4.3). alcance em px; angulo = metade da abertura do golpe, em graus.
-## sprite = [folha, coluna, linha] do ícone que o Pai segura; sprite_cor tinge o ícone.
+## sprite = [folha, coluna, linha] do ícone 16x16 que o Pai segura, ou o caminho
+## de um PNG inteiro (ex.: 32x32); sprite_cor tinge o ícone; sprite_cabo = ponto
+## do cabo no PNG inteiro (padrão: o equivalente a (3, 13) num ícone 16x16).
 ## Os ícones são desenhados na diagonal: cabo embaixo à esquerda, ponta em cima à direita.
+## "socos" não tem sprite: é o que o Pai usa sem arma (quebra caixas e barris).
 const ARMAS := {
-	"cano": {"nome": "Cano de ferro", "curto": "Cano", "dano": 2, "alcance": 20.0, "recarga": 0.38, "angulo": 70.0, "cor": Color(0.78, 0.8, 0.88), "sprite": [_MAGO, 1, 0], "sprite_cor": Color(0.85, 0.85, 0.9)},
+	"socos": {"nome": "Socos", "curto": "Socos", "dano": 1, "alcance": 12.0, "recarga": 0.32, "angulo": 50.0, "cor": Color(1.0, 0.9, 0.8)},
+	"porrete": {"nome": "Porrete de madeira", "curto": "Porrete", "dano": 3, "alcance": 20.0, "recarga": 0.5, "angulo": 70.0, "cor": Color(0.85, 0.7, 0.5), "sprite": _STAFFS + "7.png", "sprite_cabo": Vector2(6, 26)},
 	"clava": {"nome": "Clava de osso", "curto": "Clava", "dano": 4, "alcance": 20.0, "recarga": 0.75, "angulo": 80.0, "cor": Color(0.95, 0.9, 0.75), "sprite": [_GUERREIRO, 3, 0], "sprite_cor": Color(1.0, 0.95, 0.8)},
 	"lanca": {"nome": "Lança de teia", "curto": "Lança", "dano": 3, "alcance": 34.0, "recarga": 0.5, "angulo": 28.0, "cor": Color(0.88, 0.88, 1.0), "sprite": [_MAGO, 1, 1]},
 	"adaga": {"nome": "Adaga venenosa", "curto": "Adaga", "dano": 2, "alcance": 16.0, "recarga": 0.25, "angulo": 60.0, "veneno": 3.0, "cor": Color(0.5, 1.0, 0.4), "sprite": [_GUERREIRO, 0, 0], "sprite_cor": Color(0.75, 1.0, 0.65)},
@@ -42,11 +50,12 @@ const ARMAS := {
 }
 
 ## Receitas (GDD 4.3). "inicial" = já vem no livro; as outras aparecem ao achar
-## a página (bilhete com `receita`) ou ao derrotar certo monstro pela 1ª vez.
+## a página (bilhete com `receita`, ex.: o curativo, no bilhete da Sala1) ou ao derrotar certo monstro pela 1ª vez.
 const RECEITAS := [
+	{"id": "porrete", "tipo": "arma", "custo": {"madeira": 3}, "inicial": true, "efeito": "Primeira arma de verdade. Bate mais forte que os socos."},
 	{"id": "clava", "tipo": "arma", "custo": {"osso": 3, "madeira": 2}, "inicial": true, "efeito": "Dano médio, ataque lento."},
 	{"id": "lanca", "tipo": "arma", "custo": {"teia": 4, "madeira": 2, "sucata": 1}, "inicial": true, "efeito": "Alcance longo."},
-	{"id": "curativo", "tipo": "curativo", "nome": "Curativo", "custo": {"teia": 2, "madeira": 1}, "inicial": true, "efeito": "Recupera %d de vida (tecla Q)." % CURA},
+	{"id": "curativo", "tipo": "curativo", "nome": "Curativo", "custo": {"teia": 2, "madeira": 1}, "efeito": "Recupera %d de vida (tecla Q)." % CURA},
 	{"id": "adaga", "tipo": "arma", "custo": {"presa": 2, "osso": 1}, "efeito": "Causa veneno por alguns segundos."},
 	{"id": "tocha", "tipo": "melhoria", "nome": "Luz reforçada", "custo": {"po_magico": 1, "madeira": 2}, "efeito": "Aumenta o raio da luz que acompanha o Pai."},
 	{"id": "espada", "tipo": "arma", "custo": {"ectoplasma": 4, "osso": 2, "sucata": 2}, "efeito": "Dano extra contra fantasmas."},
@@ -57,6 +66,17 @@ const RECEITAS := [
 ## Monstros (GDD 6). drops = [material, mín, máx, chance].
 ## distancia/projetil: monstros que atacam de longe (criatura mágica, feiticeiro).
 ## receita: aparece no livro ao derrotar esse monstro pela primeira vez.
+## Campos opcionais (inimigo.gd):
+## - velocidade_projetil (px/s, padrão 110) e cor_projetil;
+## - escala: tamanho do monstro (1 = normal);
+## - fixo: não vaga, não persegue nem é empurrado (ex.: olho preso na parede);
+## - distancia_fechar, tempo_fechado, tempo_aberto: fixo que fecha quando o Pai
+##   chega a distancia_fechar px. Fechado fica invulnerável e não atira por
+##   tempo_fechado s; depois fica aberto (vulnerável) pelo menos tempo_aberto s;
+## - apagar_luz: segundos que o projétil apaga a luz do Pai ao acertar;
+## - furia_vida (fração da vida), furia_velocidade, furia_recarga (multiplicadores):
+##   abaixo de furia_vida o monstro fica mais rápido e deixa rastro de fogo;
+## - rastro_intervalo (s entre chamas), rastro_duracao (s), rastro_dano.
 const INIMIGOS := {
 	"Aranha pequena": {"vida": 2, "dano": 1, "velocidade": 55.0, "alcance": 14.0, "recarga": 0.9, "drops": [["teia", 1, 1, 1.0]]},
 	"Aranha grande": {"vida": 8, "dano": 2, "velocidade": 40.0, "alcance": 20.0, "recarga": 1.2, "drops": [["teia", 1, 2, 1.0], ["presa", 1, 1, 0.75]]},
@@ -64,9 +84,10 @@ const INIMIGOS := {
 	"Esqueleto": {"vida": 6, "dano": 2, "velocidade": 44.0, "alcance": 16.0, "recarga": 1.3, "drops": [["osso", 1, 2, 1.0]]},
 	"Zumbi": {"vida": 8, "dano": 2, "velocidade": 22.0, "alcance": 16.0, "recarga": 1.4, "drops": [["osso", 1, 1, 0.8], ["sucata", 1, 1, 0.5]]},
 	# 1º andar
-	"Olho maligno vermelho": {"vida": 3, "dano": 2, "velocidade": 45.0, "alcance": 16.0, "recarga": 1.1, "drops": [["osso", 1, 1, 0.6]]},
+	"Olho maligno vermelho": {"vida": 3, "dano": 1, "velocidade": 0.0, "alcance": 110.0, "recarga": 2.2, "projetil": true, "velocidade_projetil": 45.0, "cor_projetil": Color(1.0, 0.35, 0.3), "fixo": true, "distancia_fechar": 28.0, "tempo_fechado": 2.5, "tempo_aberto": 1.5, "drops": [["po_magico", 1, 1, 1.0]]},
 	"Olho maligno azul": {"vida": 4, "dano": 1, "velocidade": 38.0, "alcance": 16.0, "recarga": 1.0, "drops": [["teia", 1, 1, 0.7]]},
-	"Chama sombria": {"vida": 5, "dano": 1, "velocidade": 25.0, "alcance": 100.0, "distancia": 60.0, "recarga": 2.0, "projetil": true, "drops": [["po_magico", 1, 1, 0.5], ["sucata", 1, 1, 0.5]]},
+	# mini-chefe da arena Sudeste
+	"Chama sombria": {"vida": 18, "dano": 2, "velocidade": 28.0, "alcance": 110.0, "distancia": 60.0, "recarga": 1.8, "projetil": true, "velocidade_projetil": 90.0, "escala": 1.5, "apagar_luz": 3.0, "furia_vida": 0.5, "furia_velocidade": 1.6, "furia_recarga": 0.75, "rastro_intervalo": 0.3, "rastro_duracao": 3.0, "rastro_dano": 1, "drops": [["fragmento", 1, 1, 1.0]]},
 	"Fantasma": {"vida": 4, "dano": 1, "velocidade": 35.0, "alcance": 14.0, "recarga": 1.0, "drops": [["ectoplasma", 1, 1, 1.0]]},
 	"Criatura mágica": {"vida": 5, "dano": 1, "velocidade": 35.0, "alcance": 110.0, "distancia": 70.0, "recarga": 1.8, "projetil": true, "drops": [["po_magico", 1, 1, 1.0]], "receita": "tocha"},
 	"Demônio": {"vida": 10, "dano": 2, "velocidade": 45.0, "alcance": 18.0, "recarga": 1.1, "drops": [["fragmento", 1, 1, 0.7], ["osso", 1, 1, 0.4]]},
@@ -100,7 +121,10 @@ static var _sprites_armas := {}
 static func sprite_arma(id: String) -> Texture2D:
 	if _sprites_armas.has(id):
 		return _sprites_armas[id]
-	var s: Array = ARMAS.get(id, {}).get("sprite", [])
+	var s: Variant = ARMAS.get(id, {}).get("sprite", [])
+	if s is String:
+		_sprites_armas[id] = load(s)
+		return _sprites_armas[id]
 	if s.is_empty():
 		return null
 	var at := AtlasTexture.new()
@@ -108,6 +132,17 @@ static func sprite_arma(id: String) -> Texture2D:
 	at.region = Rect2(s[1] * TAM_ICONE, s[2] * TAM_ICONE, TAM_ICONE, TAM_ICONE)
 	_sprites_armas[id] = at
 	return at
+
+
+## Quanto o ícone da arma encolhe para ficar do tamanho de um ícone 16x16.
+static func escala_icone_arma(id: String) -> float:
+	var tex := sprite_arma(id)
+	return 1.0 if tex == null else TAM_ICONE / maxf(tex.get_width(), 1.0)
+
+
+## Ponto do cabo da arma, em pixels do ícone.
+static func cabo_arma(id: String) -> Vector2:
+	return ARMAS.get(id, {}).get("sprite_cabo", Vector2(3, 13) / escala_icone_arma(id))
 
 
 static func cor_icone(id: String) -> Color:

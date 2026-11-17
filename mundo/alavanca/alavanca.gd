@@ -2,10 +2,14 @@ extends AnimatedSprite2D
 ## Alavanca na parede. Perto dela aparece "E: puxar alavanca"; apertar E
 ## vira a alavanca e chama destrancar() no nó `alvo` (ex.: um portão).
 ## Usa a animação "default" (quadro 0 = desligada, último = ligada).
+## Com `flag`, o estado fica no save: ao voltar ao jogo a alavanca já aparece
+## puxada e o alvo já destrancado.
 
 @export var alvo: NodePath
 @export var raio := 20.0
 @export var mensagem := "Algo pesado se mexeu..."
+## Flag do Jogo marcada ao puxar (ex.: "portao_aranha_aberto"). Vazio = não salva.
+@export var flag := ""
 
 var _perto := false
 var _usada := false
@@ -28,6 +32,17 @@ func _ready() -> void:
 	add_child(area)
 	area.body_entered.connect(_on_entrou)
 	area.body_exited.connect(_on_saiu)
+	if flag != "" and Jogo.get_flag(flag, false):
+		_ja_puxada.call_deferred()
+
+
+## Estado salvo: alavanca puxada e alvo destrancado, sem animação nem mensagem.
+func _ja_puxada() -> void:
+	_usada = true
+	frame = sprite_frames.get_frame_count(animation) - 1
+	var n := get_node_or_null(alvo)
+	if n and n.has_method("destrancar"):
+		n.destrancar(true)
 
 
 func _on_entrou(body: Node) -> void:
@@ -51,6 +66,9 @@ func puxar() -> void:
 	_usada = true
 	_perto = false
 	Jogo.esconder_dica()
+	if flag != "":
+		Jogo.set_flag(flag, true)
+		Jogo.salvar_progresso()
 	play()
 	await animation_finished
 	var n := get_node_or_null(alvo)

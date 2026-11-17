@@ -3612,7 +3612,7 @@ id = "andar2_para_3"
 caminho = PackedVector2Array(0, 0, 0, -18, 0, -34, 0, -52, 0, -66)
 area_pe = Rect2(-14, -10, 28, 18)
 trecho_que_some = 0.25
-mensagem_sem_destino = "A escadaria para o 3º andar ainda não foi construída."
+mensagem_sem_destino = "A escada está bloqueada por escombros."
 
 [node name="Colisoes" type="Node2D" parent="." unique_id=141090638]
 

@@ -40,6 +40,10 @@ extends Node2D
 @export var cobertura: NodePath
 ## Mostrada se não houver destino (ex.: andar ainda não feito).
 @export var mensagem_sem_destino := "Esta escada ainda não leva a lugar nenhum."
+## Flag do Jogo que libera a escada (ex.: "escada_liberada"). Vazio = livre.
+@export var flag_necessaria := ""
+## Mostrada ao tentar subir antes da flag.
+@export var mensagem_bloqueada := "Algo sombrio bloqueia a passagem."
 
 const PES := 0.0  # a origem do Pai já fica nos pés
 
@@ -50,6 +54,7 @@ var _chegando := false
 var _saindo := false
 var _t := 0.0
 var _avisou := false
+var _avisou_bloqueio := false
 
 
 func _ready() -> void:
@@ -99,7 +104,14 @@ func _physics_process(delta: float) -> void:
 
 	if not _subindo:
 		if _no_pe and _pai and subir > 0.5:
-			_comecar()
+			if flag_necessaria != "" and not Jogo.get_flag(flag_necessaria, false):
+				if not _avisou_bloqueio:
+					_avisou_bloqueio = true
+					Jogo.mostrar_mensagem(mensagem_bloqueada)
+			else:
+				_comecar()
+		elif not _no_pe:
+			_avisou_bloqueio = false  # avisa de novo na próxima tentativa
 		return
 
 	if absf(subir) > 0.3:

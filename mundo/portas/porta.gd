@@ -2,6 +2,12 @@ extends StaticBody2D
 ## Porta comum: abre quando o Pai chega perto e fecha quando ele sai.
 ## Uma sala bloqueada (sala.gd) pode trancar a porta com bloquear()
 ## até todos os monstros dela morrerem (liberar()).
+## Com `flag_necessaria`, a porta fica trancada até o Jogo ter essa flag
+## (ex.: "chave_nordeste", dada pelo baú da tumba).
+
+## Flag do Jogo que destranca a porta. Vazio = porta comum.
+@export var flag_necessaria := ""
+@export var mensagem_trancada := "Trancada. Precisa de uma chave."
 
 @onready var sprite := $AnimatedSprite2D
 @onready var collision := $CollisionShape2D
@@ -9,6 +15,10 @@ extends StaticBody2D
 
 ## Trancada por uma sala bloqueada (GDD 3.5).
 var bloqueada := false
+## Trancada por falta da flag. A sala.gd lê isto para não acender a sala.
+var trancado: bool:
+	get:
+		return flag_necessaria != "" and not Jogo.get_flag(flag_necessaria, false)
 var _aberta := false
 
 
@@ -22,6 +32,9 @@ func _on_body_entered(body):
 		return
 	if bloqueada:
 		Jogo.mostrar_mensagem("Trancada! Derrote todos os monstros da sala.", 1.5)
+		return
+	if trancado:
+		Jogo.mostrar_mensagem(mensagem_trancada, 1.8)
 		return
 	_abrir()
 
@@ -38,7 +51,7 @@ func bloquear() -> void:
 
 func liberar() -> void:
 	bloqueada = false
-	if Jogo._pai_ativo() and area.overlaps_body(Jogo.pai):
+	if not trancado and Jogo._pai_ativo() and area.overlaps_body(Jogo.pai):
 		_abrir()
 
 

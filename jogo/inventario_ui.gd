@@ -14,7 +14,6 @@ const ICONE := 16
 ## id do item -> [folha, coluna, linha, tinta opcional]
 const ICONES := {
 	# armas
-	"cano": [GUERREIRO, 3, 0],
 	"clava": [MAGO, 0, 1],
 	"lanca": [MAGO, 1, 1],
 	"adaga": [GUERREIRO, 0, 0],
@@ -30,7 +29,8 @@ const ICONES := {
 }
 
 const DESCRICOES := {
-	"cano": "Um cano velho e pesado, arrancado da sala de comando. Melhor que nada.",
+	"socos": "Sem arma, o Pai luta com as mãos. Fraco, mas quebra caixas e barris.",
+	"porrete": "Um galho grosso e retorcido. Pesado o bastante para fazer estrago.",
 	"osso": "Osso seco e resistente. Base de armas e escudos.",
 	"teia": "Fios grossos e pegajosos. Servem de corda e de reforço.",
 	"presa": "Presa de aranha grande. Ainda pinga veneno.",
@@ -266,7 +266,10 @@ func _icone(id: String) -> Array:
 	if _cache.has(id):
 		return _cache[id]
 	var r := [null, Color.WHITE]
-	if ICONES.has(id):
+	if not ICONES.has(id) and Itens.ARMAS.has(id):
+		# arma com ícone próprio em Itens (ex.: PNG inteiro de 32 px)
+		r = [Itens.sprite_arma(id), Itens.ARMAS[id].get("sprite_cor", Color.WHITE)]
+	elif ICONES.has(id):
 		var d: Array = ICONES[id]
 		var at := AtlasTexture.new()
 		at.atlas = load(d[0])

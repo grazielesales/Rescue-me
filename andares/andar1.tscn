@@ -29,7 +29,11 @@
 [ext_resource type="Script" uid="uid://075jtexxsb87" path="res://inimigos/inimigo.gd" id="40_inimigo"]
 [ext_resource type="PackedScene" uid="uid://c2fb0kuafv06b" path="res://inimigos/esqueleto.tscn" id="52_esqueleto"]
 [ext_resource type="Script" uid="uid://ckstx4okmu1fu" path="res://mundo/narrativa/bilhete.gd" id="53_bilhete"]
-
+[ext_resource type="Script" path="res://mundo/salas/luz_oscilante.gd" id="54_luz_osc"]
+[ext_resource type="Script" path="res://mundo/bau/bau.gd" id="55_bau"]
+[ext_resource type="Texture2D" uid="uid://ob52w643pl1a" path="res://mundo/narrativa/bilhete.png" id="56_bilhete_png"]
+[ext_resource type="PackedScene" path="res://inimigos/olho_vermelho.tscn" id="57_olho_vermelho"]
+[ext_resource type="PackedScene" path="res://inimigos/chama_sombria.tscn" id="58_chama_sombria"]
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_yk832"]
 texture = ExtResource("1_usgjv")
 0:0/0 = 0
@@ -4071,6 +4075,18 @@ size = Vector2(16, 32)
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_piscina"]
 size = Vector2(80, 176)
 
+[sub_resource type="Gradient" id="Gradient_monitor"]
+offsets = PackedFloat32Array(0, 0.35, 1)
+colors = PackedColorArray(1, 1, 1, 1, 0.6, 0.6, 0.6, 1, 0, 0, 0, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_monitor"]
+gradient = SubResource("Gradient_monitor")
+width = 64
+height = 64
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(1, 0.5)
+
 [node name="Node2D" type="Node2D" unique_id=65920974]
 y_sort_enabled = true
 script = ExtResource("20_andar")
@@ -4183,6 +4199,7 @@ shape = SubResource("RectangleShape2D_0duit")
 [node name="Area2D" type="Area2D" parent="Props/door sala 2" unique_id=1563717158]
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Props/door sala 2/Area2D" unique_id=828207720]
+visible = false
 position = Vector2(-78.99997, 24.999989)
 shape = SubResource("RectangleShape2D_mars6")
 
@@ -4218,8 +4235,18 @@ dica = "E: olhar"
 visible = false
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Props/centro-controle/Colisao" unique_id=372029470]
+visible = false
 position = Vector2(0, -7.2)
 shape = SubResource("RectangleShape2D_colisao1")
+
+[node name="BrilhoMonitores" type="PointLight2D" parent="Props/centro-controle"]
+position = Vector2(0, -22)
+editor_description = "Brilho azulado e suave das telas. Oscila de leve (luz_oscilante.gd)."
+color = Color(0.45, 0.7, 1, 1)
+energy = 0.5
+texture = SubResource("GradientTexture2D_monitor")
+texture_scale = 1.05
+script = ExtResource("54_luz_osc")
 
 [node name="AnimatedSprite2D3" type="AnimatedSprite2D" parent="Props" unique_id=1474132409]
 editor_description = "Alavanca: E perto dela levanta o portão da sala da aranha."
@@ -4231,6 +4258,7 @@ centered = false
 offset = Vector2(0, -16)
 script = ExtResource("26_alavanca")
 alvo = NodePath("../portao sala aranha")
+flag = "portao_aranha_aberto"
 
 [node name="Colisao" type="StaticBody2D" parent="Props/AnimatedSprite2D3" unique_id=821449902]
 visible = false
@@ -4277,6 +4305,7 @@ shape = SubResource("RectangleShape2D_colisao4")
 
 [node name="portao sala 2" type="AnimatedSprite2D" parent="Props" unique_id=149698351]
 editor_description = "Substituído pelo nó Props/portao sala aranha (portão funcional com porta)."
+visible = false
 position = Vector2(-57, -55)
 scale = Vector2(0.99999994, 0.99999994)
 sprite_frames = SubResource("SpriteFrames_i6bh8")
@@ -4370,6 +4399,7 @@ shape = SubResource("RectangleShape2D_colisao7")
 
 [node name="porta sala nordeste" parent="Props" unique_id=877778525 instance=ExtResource("23_porta")]
 position = Vector2(535, -115)
+flag_necessaria = "chave_nordeste"
 
 [node name="porta sala sul oeste" parent="Props" unique_id=1538141934 instance=ExtResource("23_porta")]
 position = Vector2(247, 29)
@@ -4381,7 +4411,6 @@ position = Vector2(423, 29)
 position = Vector2(671, 122)
 
 [node name="portao sala aranha" parent="Props" unique_id=1030475343 instance=ExtResource("24_portao")]
-visible = false
 position = Vector2(-57, -67)
 trancado = true
 
@@ -4461,17 +4490,35 @@ visible = false
 position = Vector2(0, -3)
 shape = SubResource("RectangleShape2D_deco9")
 
-[node name="deco bau tesouro sul" type="Sprite2D" parent="Props" unique_id=1750853794]
+[node name="bilhete curativo" type="Sprite2D" parent="Props"]
+editor_description = "Bilhete da Sala1: ao ler, ensina a receita de curativo."
+z_index = -1
+position = Vector2(-18, -164)
+texture = ExtResource("56_bilhete_png")
+script = ExtResource("53_bilhete")
+texto = "Anotado às pressas, com a letra tremida:
+
+Quem se machucar não espere ajuda. Junte teia das aranhas e um pedaço de madeira, enrole bem apertado na ferida e segure firme.
+
+Não fica bonito, mas fecha o corte.
+
+(Nova receita no livro: Curativo)"
+receita = "curativo"
+
+[node name="bau tumba" type="Sprite2D" parent="Props" unique_id=1750853794]
+editor_description = "Baú da tumba (bau.gd): E abre, dá a flag chave_nordeste, marca tumba_aberta (acorda os esqueletos e ativa a arena da SalaSul) e salva."
 position = Vector2(300.00003, 61)
 texture = ExtResource("13_o4i6i")
-offset = Vector2(0, -10)
+offset = Vector2(0, -8)
 region_enabled = true
-region_rect = Rect2(179, 52, 29, 22)
+region_rect = Rect2(151, 20, 19, 18)
+script = ExtResource("55_bau")
+textura_recompensa = ExtResource("13_o4i6i")
 
-[node name="Colisao" type="StaticBody2D" parent="Props/deco bau tesouro sul" unique_id=892487292]
+[node name="Colisao" type="StaticBody2D" parent="Props/bau tumba" unique_id=892487292]
 visible = false
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Props/deco bau tesouro sul/Colisao" unique_id=1925012207]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Props/bau tumba/Colisao" unique_id=1925012207]
 visible = false
 position = Vector2(0, -3)
 shape = SubResource("RectangleShape2D_deco10")
@@ -4562,6 +4609,7 @@ region_rect = Rect2(209, 80, 14, 19)
 visible = false
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Props/deco vaso sudeste 1/Colisao" unique_id=1107002573]
+visible = false
 position = Vector2(0, -3)
 shape = SubResource("RectangleShape2D_deco18")
 
@@ -4583,6 +4631,7 @@ region_rect = Rect2(192, 80, 16, 24)
 visible = false
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Props/barril sudeste 1/Colisao" unique_id=718609946]
+visible = false
 position = Vector2(0, -3)
 shape = SubResource("RectangleShape2D_deco20")
 
@@ -4597,6 +4646,7 @@ region_rect = Rect2(176, 80, 16, 24)
 visible = false
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Props/caixa sudeste 1/Colisao" unique_id=452704319]
+visible = false
 position = Vector2(0, -3)
 shape = SubResource("RectangleShape2D_deco21")
 
@@ -4618,6 +4668,7 @@ region_rect = Rect2(336, 48, 29, 32)
 visible = false
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Props/deco caixa e vaso aranha/Colisao" unique_id=126284207]
+visible = false
 position = Vector2(0, -3)
 shape = SubResource("RectangleShape2D_deco23")
 
@@ -4632,6 +4683,7 @@ region_rect = Rect2(162, 83, 13, 18)
 visible = false
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Props/caixa aranha 1/Colisao" unique_id=1595242349]
+visible = false
 position = Vector2(0, -3)
 shape = SubResource("RectangleShape2D_deco24")
 
@@ -4646,6 +4698,7 @@ region_rect = Rect2(49, 115, 14, 19)
 visible = false
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Props/deco vasos aranha/Colisao" unique_id=65017015]
+visible = false
 position = Vector2(0, -3)
 shape = SubResource("RectangleShape2D_deco25")
 
@@ -4696,6 +4749,8 @@ script = ExtResource("40_inimigo")
 tipo = "Esqueleto"
 altura_pes = 13.0
 largura_corpo = 14.0
+dormindo = true
+flag_acordar = "tumba_aberta"
 
 [node name="esqueleto SalaSul 2" parent="Entities" unique_id=956849286 instance=ExtResource("52_esqueleto")]
 position = Vector2(378, 158)
@@ -4703,6 +4758,8 @@ script = ExtResource("40_inimigo")
 tipo = "Esqueleto"
 altura_pes = 13.0
 largura_corpo = 14.0
+dormindo = true
+flag_acordar = "tumba_aberta"
 
 [node name="esqueleto SalaSul 3" parent="Entities" unique_id=1673183776 instance=ExtResource("52_esqueleto")]
 position = Vector2(464, 147)
@@ -4710,6 +4767,20 @@ script = ExtResource("40_inimigo")
 tipo = "Esqueleto"
 altura_pes = 13.0
 largura_corpo = 14.0
+dormindo = true
+flag_acordar = "tumba_aberta"
+
+[node name="olho SalaNordeste 1" parent="Entities" instance=ExtResource("57_olho_vermelho")]
+position = Vector2(454, -158)
+
+[node name="olho SalaNordeste 2" parent="Entities" instance=ExtResource("57_olho_vermelho")]
+position = Vector2(510, -158)
+
+[node name="olho SalaNordeste 3" parent="Entities" instance=ExtResource("57_olho_vermelho")]
+position = Vector2(560, -158)
+
+[node name="chama sombria SalaSudeste" parent="Entities" instance=ExtResource("58_chama_sombria")]
+position = Vector2(782, 139)
 
 [node name="wall2" type="TileMapLayer" parent="." unique_id=44779132]
 oversampling_with_scale = 2
@@ -4747,6 +4818,8 @@ script = ExtResource("21_sala")
 areas = Array[Rect2]([Rect2(-112, 208, 240, 32), Rect2(-64, 240, 192, 48)])
 luz = Array[Rect2]([Rect2(-128, 160, 272, 80), Rect2(-64, 240, 208, 48)])
 portas = Array[NodePath]([NodePath("../../Props/porta sala sul oeste"), NodePath("../../Props/porta sala sul leste")])
+arena = true
+flag_para_ativar = "tumba_aberta"
 
 [node name="SalaSudeste" type="Node2D" parent="Salas" unique_id=1095692309]
 script = ExtResource("21_sala")
@@ -4754,11 +4827,13 @@ areas = Array[Rect2]([Rect2(352, 176, 160, 112)])
 nevoa = Array[Rect2]([Rect2(352, 128, 160, 160)])
 luz = Array[Rect2]([Rect2(352, 128, 160, 160)])
 portas = Array[NodePath]([NodePath("../../Props/porta sala sudeste")])
+arena = true
+flag_ao_vencer = "escada_liberada"
 
 [node name="SalaDaAranha" type="Node2D" parent="Salas" unique_id=21854116]
 script = ExtResource("21_sala")
 areas = Array[Rect2]([Rect2(-416, 128, 144, 112), Rect2(-416, 112, 80, 16)])
-luz = Array[Rect2]([Rect2(-416, 64, 80, 176), Rect2(-336, 80, 80, 160)])
+luz = Array[Rect2]([Rect2(-416, 96, 80, 144), Rect2(-336, 80, 80, 160)])
 portas = Array[NodePath]([NodePath("../../Props/portao sala aranha")])
 
 [node name="EscadaParaAndar2" type="Node2D" parent="." unique_id=1018877412]
@@ -4770,6 +4845,7 @@ chegada_no_destino = "andar2_chegada"
 caminho = PackedVector2Array(0, 0, 1, -12, 18, -42, 18, -51)
 area_pe = Rect2(-10, -14, 24, 22)
 direcao_subir = Vector2(0.25, -1)
+flag_necessaria = "escada_liberada"
 
 [node name="Colisoes" type="Node2D" parent="." unique_id=707108412]
 editor_description = "Colisões extras que não vêm dos tiles."

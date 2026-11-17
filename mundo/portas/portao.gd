@@ -60,10 +60,14 @@ func liberar() -> void:
 
 
 ## Chamado pela alavanca: levanta o portão e ele não fecha mais.
-func destrancar() -> void:
+## `imediato` = já aparece levantado, sem animação (estado vindo do save).
+func destrancar(imediato := false) -> void:
 	trancado = false
 	_levantado = true
 	if bloqueado:
 		return
 	sprite.play("opening")
+	if imediato:
+		sprite.frame = sprite.sprite_frames.get_frame_count("opening") - 1
+		sprite.pause()
 	collision.set_deferred("disabled", true)

@@ -245,11 +245,19 @@ animations = [{
 "loop": false,
 "name": &"death",
 "speed": 10.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("a22")
+}],
+"loop": true,
+"name": &"closed",
+"speed": 5.0
 }]
 
 [node name="olho_vermelho" type="CharacterBody2D"]
 script = ExtResource("1_script")
-editor_description = "Olho Maligno vermelho (Evil Eye Pixel Monsters Vol. 13, cor red). Voa e ataca com a cauda."
+editor_description = "Olho Maligno vermelho (Evil Eye Pixel Monsters Vol. 13, cor red). Fixo na parede: atira projéteis lentos e fecha (animação closed = quadro death_hit_00) quando o Pai chega perto."
 tipo = "Olho maligno vermelho"
 altura_pes = 14.0
 largura_corpo = 18.0

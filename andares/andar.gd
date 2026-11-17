@@ -14,6 +14,9 @@ func _ready() -> void:
 	# o mapa claro; no jogo ela é ligada aqui.
 	for n in find_children("*", "CanvasModulate", false, false):
 		n.visible = true
+	# Abrindo o jogo com save de outro andar: o Jogo troca para lá.
+	if Jogo.continuar_save(scene_file_path):
+		return
 	Jogo.definir_andar(nome)
 	_preparar_quebraveis()
 	_recriar_drops()
@@ -23,7 +26,7 @@ func _ready() -> void:
 	if Jogo.escada_de_chegada != "":
 		var id := Jogo.escada_de_chegada
 		Jogo.escada_de_chegada = ""
-		Jogo.checkpoint = {"cena": cena, "escada": id}
+		Jogo.definir_checkpoint({"cena": cena, "escada": id})
 		_chegar_pela_escada(pai, id)
 	elif Jogo.checkpoint.get("cena", "") == cena and pai:
 		# voltou depois de morrer
@@ -32,7 +35,7 @@ func _ready() -> void:
 		else:
 			_chegar_pela_escada(pai, Jogo.checkpoint.escada)
 	elif pai:
-		Jogo.checkpoint = {"cena": cena, "pos": pai.global_position}
+		Jogo.definir_checkpoint({"cena": cena, "pos": pai.global_position})
 
 
 ## Malha de navegação dos monstros: todo o chão do andar, menos as paredes

@@ -44,6 +44,12 @@ signal acendeu
 ## Arena: as portas (`portas`) fecham quando o Pai entra e só abrem quando
 ## todos os inimigos da sala morrerem. Vencer a sala vira ponto de salvamento.
 @export var trancar_ao_entrar := true
+## Flag do Jogo que ativa a arena (ex.: "tumba_aberta", dada pelo baú). Antes
+## dela a sala não tranca. Vazio = ativa desde o começo.
+@export var flag_para_ativar := ""
+## Flag do Jogo marcada ao vencer a arena (ex.: "escada_liberada"). Arena sem
+## monstros conta como vencida quando o Pai entra.
+@export var flag_ao_vencer := ""
 
 signal concluiu
 
@@ -173,9 +179,9 @@ func _contar_inimigos() -> void:
 			if n.has_signal("morreu"):
 				n.morreu.connect(_on_inimigo_morreu)
 	if arena and not concluida:
-		if _vivos() == 0:
+		if _vivos() == 0 and flag_ao_vencer == "":
 			concluida = true
-		elif trancar_ao_entrar:
+		elif trancar_ao_entrar or _vivos() == 0:
 			set_physics_process(true)
 
 
@@ -189,6 +195,11 @@ func _physics_process(_delta: float) -> void:
 		return
 	var pai: Node2D = Jogo.pai if Jogo._pai_ativo() else null
 	if pai == null or not contem(pai.global_position):
+		return
+	if _vivos() == 0:
+		_vencer()  # arena vazia: entrar já vence (e dá a flag_ao_vencer)
+		return
+	if flag_para_ativar != "" and not Jogo.get_flag(flag_para_ativar, false):
 		return
 	for caminho in portas:
 		var porta := get_node_or_null(caminho)
@@ -204,21 +215,31 @@ func _trancar() -> void:
 		var porta := get_node_or_null(caminho)
 		if porta and porta.has_method("bloquear"):
 			porta.bloquear()
-	Jogo.mostrar_mensagem("As portas se fecharam! Derrote todos os monstros.")
+	Jogo.mostrar_mensagem("As portas se fecharam! Derrote todos os monstros.", 2.5, true)
 
 
 func _on_inimigo_morreu(_n: Node) -> void:
 	if concluida or _vivos() > 0:
 		return
+	_vencer()
+
+
+func _vencer() -> void:
+	if concluida:
+		return
 	concluida = true
 	set_physics_process(false)
+	var estava_trancada := _trancada
 	_trancada = false
 	for caminho in portas:
 		var porta := get_node_or_null(caminho)
 		if porta and porta.has_method("liberar"):
 			porta.liberar()
+	# a flag entra antes do checkpoint, que grava o save
+	if flag_ao_vencer != "":
+		Jogo.set_flag(flag_ao_vencer, true)
 	var pai: Node2D = Jogo.pai if Jogo._pai_ativo() else null
-	Jogo.concluir_sala(_chave(), pai.global_position if pai else global_position)
+	Jogo.concluir_sala(_chave(), pai.global_position if pai else global_position, estava_trancada)
 	concluiu.emit()
 
 

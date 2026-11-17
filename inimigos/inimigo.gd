@@ -2,9 +2,20 @@ extends CharacterBody2D
 ## Monstro posicionado nos andares (GDD 6).
 ## - entra nos grupos "inimigos" (as salas-arena contam quem está dentro delas)
 ##   e "atingiveis" (o ataque do Pai procura esse grupo);
-## - fica parado até o Pai aparecer: se o monstro está numa sala, quando o Pai
-##   entra na sala acesa; fora de salas, quando ele chega a `raio_alerta` e
-##   não há parede entre os dois (depois persegue até ele se afastar muito);
+## - enquanto não percebe o Pai, vaga pela própria sala (ou em volta de onde
+##   nasceu, fora de salas), parando de vez em quando (grupo "Vagar");
+## - percebe o Pai quando ele entra na sala acesa do monstro; fora de salas,
+##   quando ele chega a `raio_alerta` e não há parede entre os dois (depois
+##   persegue até ele se afastar muito);
+## - em grupo, só MAX_ATACANTES partem para cima ao mesmo tempo; os outros
+##   rondam o Pai esperando a vez (grupo "Em grupo");
+## - `dormindo`: fica parado no primeiro quadro, sem vagar nem perceber o Pai,
+##   até a `flag_acordar` existir no Jogo ou levar um golpe (ex.: esqueletos
+##   da tumba, acordados pelo baú);
+## - campos opcionais de Itens.INIMIGOS (ver o comentário lá): `fixo` com
+##   olho que fecha (olho maligno), `escala`, `apagar_luz` no projétil e
+##   `furia_*`/`rastro_*` (chama sombria: abaixo de metade da vida fica mais
+##   rápida e deixa um rastro de fogo, a classe RastroFogo no fim do arquivo);
 ## - persegue contornando paredes e móveis (malha de navegação que o andar.gd
 ##   cria) e ataca corpo a corpo, ou mantém distância e atira (criatura
 ##   mágica, feiticeiro). Não ataca através de paredes;
@@ -49,6 +60,13 @@ const LARGURA_MAX_COLISAO := 8.0  # um pouco menor que a do Pai (10)
 ## mesmo tempo; os outros rondam a esta distância dele, esperando a vez.
 @export var raio_ronda := 48.0
 
+@export_group("Dormindo")
+## Começa dormindo: não vaga e não percebe o Pai.
+@export var dormindo := false
+## Flag do Jogo que acorda o monstro (ex.: "tumba_aberta"). Vazio = só um
+## golpe acorda.
+@export var flag_acordar := ""
+
 @export_group("Vagar")
 ## Anda sozinho pela própria sala (ou em volta de onde nasceu, fora de salas)
 ## enquanto não percebe o Pai, parando de vez em quando. Ligado em todos por
@@ -71,6 +89,13 @@ var _alcance := 16.0
 var _recarga_max := 1.2
 var _distancia := 0.0
 var _projetil := false
+var _fixo := false
+## Olho fixo: fechado (invulnerável, sem atirar) e tempos de fechar/abrir.
+var _fechado := false
+var _fechado_t := 0.0
+var _aberto_t := 0.0
+var _furia := false
+var _rastro_t := 0.0
 var _recarga := 0.5
 var _ataque_t := 0.0
 var _acertou := false
@@ -124,6 +149,10 @@ func _ready() -> void:
 	_recarga_max = _dados.recarga
 	_distancia = _dados.get("distancia", 0.0)
 	_projetil = _dados.get("projetil", false)
+	_fixo = _dados.get("fixo", false)
+	if _fixo:
+		vagar = false
+	scale *= float(_dados.get("escala", 1.0))
 	_achar_sala.call_deferred()
 	_preparar_navegacao.call_deferred()
 
@@ -158,6 +187,21 @@ func _ready() -> void:
 		_sprite.frame = randi() % max(1, _sprite.sprite_frames.get_frame_count(anim))
 	if _sprite.sprite_frames.has_animation("walk"):
 		_sprite.sprite_frames.set_animation_loop("walk", true)
+	if dormindo:
+		if flag_acordar != "" and Jogo.get_flag(flag_acordar, false):
+			dormindo = false  # já acordou antes (estado do save)
+		else:
+			_sprite.pause()
+			_sprite.frame = 0
+
+
+## Acorda (flag, golpe): volta a animar e passa a vagar e perceber o Pai.
+func acordar() -> void:
+	if not dormindo:
+		return
+	dormindo = false
+	if _sprite and _sprite.sprite_frames:
+		_sprite.play(_anim_base)
 
 
 func _achar_sala() -> void:
@@ -229,7 +273,20 @@ func _physics_process(delta: float) -> void:
 	if morto:
 		return
 
+	if dormindo:
+		if flag_acordar != "" and Jogo.get_flag(flag_acordar, false):
+			acordar()
+		else:
+			velocity = _empurrao
+			_empurrao = _empurrao.move_toward(Vector2.ZERO, 500.0 * delta)
+			move_and_slide()
+			return
+
 	var pai: Node2D = Jogo.pai if Jogo._pai_ativo() else null
+	if _fixo:
+		_tick_fixo(delta, pai)
+		return
+	_tick_furia(delta)
 	var vel := Vector2.ZERO
 	if _ataque_t > 0.0:
 		_tick_ataque(delta, pai)
@@ -394,6 +451,57 @@ func _percebe(pai: Node2D) -> bool:
 	return _alertado
 
 
+## Monstro fixo (olho na parede): não anda. Atira quando vê o Pai; fecha
+## quando ele chega perto demais e abre de novo depois de um tempo.
+func _tick_fixo(delta: float, pai: Node2D) -> void:
+	if _ataque_t > 0.0:
+		_tick_ataque(delta, pai)
+	var dist_fechar: float = _dados.get("distancia_fechar", 0.0)
+	var perto := pai != null and dist_fechar > 0.0 \
+			and global_position.distance_to(pai.global_position) <= dist_fechar
+	if _fechado:
+		_fechado_t -= delta
+		if _fechado_t <= 0.0:
+			_fechado = false
+			_aberto_t = _dados.get("tempo_aberto", 1.5)
+	else:
+		_aberto_t = maxf(0.0, _aberto_t - delta)
+		if perto and _aberto_t <= 0.0 and _ataque_t <= 0.0:
+			_fechado = true
+			_fechado_t = _dados.get("tempo_fechado", 2.5)
+	if not _fechado and _ataque_t <= 0.0 and pai and _percebe(pai):
+		_virar(pai.global_position.x - global_position.x)
+		if _recarga <= 0.0 and _ve(pai) \
+				and global_position.distance_to(pai.global_position) <= _alcance:
+			_comecar_ataque()
+	velocity = Vector2.ZERO
+	_animar(Vector2.ZERO)
+
+
+## Fúria (furia_vida): mais rápido, atira mais e deixa rastro de fogo.
+func _tick_furia(delta: float) -> void:
+	var limite: float = _dados.get("furia_vida", 0.0)
+	if limite <= 0.0:
+		return
+	if not _furia and vida <= vida_maxima * limite:
+		_furia = true
+		velocidade *= float(_dados.get("furia_velocidade", 1.5))
+		_recarga_max *= float(_dados.get("furia_recarga", 1.0))
+		_piscar(Color(0.8, 0.4, 1.0))
+		if _sprite:
+			_sprite.self_modulate = Color(1.15, 0.85, 1.25)
+	if not _furia:
+		return
+	_rastro_t -= delta
+	if _rastro_t <= 0.0:
+		_rastro_t = _dados.get("rastro_intervalo", 0.3)
+		var r := RastroFogo.new()
+		r.dano = _dados.get("rastro_dano", 1)
+		r.duracao = _dados.get("rastro_duracao", 3.0)
+		get_parent().add_child(r)
+		r.global_position = global_position
+
+
 func _comecar_ataque() -> void:
 	_ataque_t = 0.6
 	_acertou = false
@@ -414,6 +522,9 @@ func _tick_ataque(delta: float, pai: Node2D) -> void:
 		var p := Projetil.new()
 		p.direcao = ((pai.global_position + Vector2(0, -8)) - origem).normalized()
 		p.dano = dano
+		p.velocidade = _dados.get("velocidade_projetil", p.velocidade)
+		p.cor = _dados.get("cor_projetil", p.cor)
+		p.apagar_luz = _dados.get("apagar_luz", 0.0)
 		get_parent().add_child(p)
 		p.global_position = origem
 	elif global_position.distance_to(pai.global_position) <= _alcance + 6.0 and _ve(pai):
@@ -424,8 +535,13 @@ func _tick_ataque(delta: float, pai: Node2D) -> void:
 func levar_dano(qtd: int, direcao: Vector2, arma := {}) -> void:
 	if morto:
 		return
+	if _fechado:
+		_piscar(Color(0.55, 0.55, 0.6))  # "tink": fechado não leva dano
+		return
 	vida -= qtd
-	_empurrao = direcao * (60.0 if _projetil else 120.0)
+	acordar()
+	if not _fixo:
+		_empurrao = direcao * (60.0 if _projetil else 120.0)
 	_piscar(Color(1, 0.35, 0.35))
 	if arma.has("veneno"):
 		_veneno_t = arma.veneno
@@ -438,7 +554,7 @@ func levar_dano(qtd: int, direcao: Vector2, arma := {}) -> void:
 
 
 func _tick_veneno(delta: float) -> void:
-	if _veneno_t <= 0.0:
+	if _veneno_t <= 0.0 or _fechado:
 		return
 	_veneno_t -= delta
 	_veneno_tick -= delta
@@ -488,7 +604,9 @@ func _animar(vel: Vector2) -> void:
 	if _sprite == null or _sprite.sprite_frames == null or _travado_t > 0.0:
 		return
 	var anim := _anim_base
-	if vel.length() > 2.0 and _sprite.sprite_frames.has_animation("walk"):
+	if _fechado and _sprite.sprite_frames.has_animation("closed"):
+		anim = "closed"
+	elif vel.length() > 2.0 and _sprite.sprite_frames.has_animation("walk"):
 		anim = "walk"
 	if anim != "" and _sprite.animation != anim:
 		_sprite.play(anim)
@@ -505,3 +623,83 @@ func _piscar(cor: Color) -> void:
 		return
 	_sprite.modulate = cor
 	create_tween().tween_property(_sprite, "modulate", Color.WHITE, 0.2)
+
+
+
+## Chama do rastro da fúria: uma chama sombria em miniatura no chão, que dá
+## dano ao Pai que pisar nela (ele fica invulnerável um instante depois de cada
+## golpe) e se desfaz depois de `duracao` segundos.
+class RastroFogo extends Area2D:
+	const FOLHA_IDLE := "res://assets/32x32_Pixel_Art_Monsters_Pack/02_Elementals_And_Magic/03_Shadow_Flame/ShadowFlame_Idle_6f.png"
+	const FOLHA_MORTE := "res://assets/32x32_Pixel_Art_Monsters_Pack/02_Elementals_And_Magic/03_Shadow_Flame/ShadowFlame_Death_6f.png"
+	const QUADRO := 64
+	const ESCALA := 0.4
+
+	var dano := 1
+	var duracao := 3.0
+	var _sprite: AnimatedSprite2D
+	var _sumindo := false
+	static var _frames: SpriteFrames
+
+	static func _quadros() -> SpriteFrames:
+		if _frames:
+			return _frames
+		_frames = SpriteFrames.new()
+		_frames.add_animation("arde")
+		_frames.set_animation_speed("arde", 10.0)
+		var idle: Texture2D = load(FOLHA_IDLE)
+		for i in 6:
+			var at := AtlasTexture.new()
+			at.atlas = idle
+			at.region = Rect2(i * QUADRO, 0, QUADRO, QUADRO)
+			_frames.add_frame("arde", at)
+		_frames.add_animation("some")
+		_frames.set_animation_speed("some", 10.0)
+		_frames.set_animation_loop("some", false)
+		var morte: Texture2D = load(FOLHA_MORTE)
+		for i in range(3, 6):  # quadros finais: a chama se desfaz em fagulhas
+			var at := AtlasTexture.new()
+			at.atlas = morte
+			at.region = Rect2(i * QUADRO, 0, QUADRO, QUADRO)
+			_frames.add_frame("some", at)
+		return _frames
+
+	func _ready() -> void:
+		collision_layer = 0
+		collision_mask = 1
+		monitorable = false
+		var cs := CollisionShape2D.new()
+		var shape := CircleShape2D.new()
+		shape.radius = 5.0
+		cs.shape = shape
+		cs.position = Vector2(0, -2)
+		add_child(cs)
+		_sprite = AnimatedSprite2D.new()
+		_sprite.sprite_frames = _quadros()
+		_sprite.scale = Vector2.ONE * ESCALA
+		_sprite.offset = Vector2(0, -QUADRO * 0.3)  # base da chama nos pés
+		_sprite.play("arde")
+		_sprite.frame = randi() % 6
+		add_child(_sprite)
+		var luz := PointLight2D.new()
+		luz.texture = Projetil._textura_luz()
+		luz.color = Color(0.6, 0.3, 1.0)
+		luz.energy = 0.5
+		luz.texture_scale = 0.6
+		add_child(luz)
+		get_tree().create_timer(duracao).timeout.connect(_sumir)
+
+	func _physics_process(_delta: float) -> void:
+		if _sumindo:
+			return
+		for b in get_overlapping_bodies():
+			if b.is_in_group("player") and b.has_method("levar_dano"):
+				b.levar_dano(dano, global_position)
+
+	func _sumir() -> void:
+		if not is_inside_tree():
+			return
+		_sumindo = true
+		_sprite.play("some")
+		await _sprite.animation_finished
+		queue_free()

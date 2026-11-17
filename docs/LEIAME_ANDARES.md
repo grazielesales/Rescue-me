@@ -12,6 +12,7 @@ Testado no Godot 4.7.1. Comece pelo `andares/andar1.tscn` (1º andar). A escada 
 | `inimigos/` | Cenas dos monstros (`aranha`, `zumbi`, `esqueleto`, `demonio`, `feiticeiro_espectral`, `frankie`) e o script `inimigo.gd`. |
 | `jogo/` | Sistemas globais: autoload `Jogo`, HUD, livro, inventário, tabelas de itens, coletáveis, caixas quebráveis e projéteis. |
 | `assets/` | Arte de terceiros. Cada pacote fica inteiro na sua pasta, como veio. |
+| `assets/_originais/` | Arquivos que vieram com os pacotes e o jogo não usa (`.unitypackage`, changelog, prévia). |
 | `addons/` | Pixel UI Fantasy (tema e ícones do HUD e do livro). |
 | `docs/` | Este LEIAME, o `README.pdf` e o `modelo de sala.jpg`. |
 | `_nao_usados/` | Arquivos que o jogo não usa (tocha antiga, cenas de teste, imagens soltas, wizard original). Dá para apagar quando quiser. |
@@ -30,6 +31,9 @@ Para mover arquivos depois, faça isso **pelo FileSystem do editor do Godot**: e
 - É o nó `Props/AnimatedSprite2D3`, perto do portão da sala da aranha.
 - Chegue perto e aperte **E**: a alavanca vira e levanta o portão, que fica aberto de vez.
 - Até lá o portão fica trancado (`trancado = true` no `portao sala aranha`) e avisa que existe uma alavanca.
+- O estado fica no save pela flag `portao_aranha_aberto` (campo `flag` da alavanca): ao voltar ao jogo, a alavanca já aparece puxada e o portão aberto.
+- O portão antigo `portao sala 2` é só decoração e fica escondido. O que funciona é o `portao sala aranha`.
+- A Sala da Aranha é um beco sem saída: o portão só guarda a própria sala.
 - Para ligar outra alavanca a outro portão, use o script `alavanca.gd` e aponte o campo `alvo` para um nó que tenha a função `destrancar()`.
 
 ## Salas que acendem (`mundo/salas/sala.gd`)
@@ -73,7 +77,7 @@ O antigo `portao sala 2`, que era só um sprite em loop e não bloqueava nada, f
   - `"down"` para escada que desce, como o poço do 2º andar.
 - `cobertura`: nó desenhado por cima do Pai só enquanto ele está na escada. Serve para ele sumir atrás da borda de um poço.
 - Selecione a escada no editor para ver o caminho (laranja) e a área do pé (verde).
-- Se o `destino` estiver vazio, aparece a `mensagem_sem_destino`. É o caso da escadaria para o 3º andar.
+- Se o `destino` estiver vazio, aparece a `mensagem_sem_destino`. É o caso da escadaria da Sala do Feiticeiro: "A escada está bloqueada por escombros." (não haverá 3º andar).
 
 ## 2º andar (`andares/andar2.tscn`)
 
@@ -87,7 +91,7 @@ O contorno do prédio é o mesmo do 1º andar, mas o miolo foi redesenhado:
 | **Salão** | Aberto, sem colunas no meio. |
 | **Ninho** (sudoeste) | Sala larga e baixa, com portão de grade e 5 aranhas pequenas. |
 | **Porão** e **Arena central** (sul) | Atrás de um paredão comprido, cada um com porta própria e ligados por uma porta lateral. |
-| **Sala do Feiticeiro espectral** (sudeste) | Entrada pela porta lateral da Arena. O chefão (wizard) e 2 demônios guardam a escadaria para o 3º andar. |
+| **Sala do Feiticeiro espectral** (sudeste) | Entrada pela porta lateral da Arena. O chefão (wizard) e 2 demônios guardam a escadaria, que está bloqueada por escombros. |
 
 - **Poço da escada:** quem chega do 1º andar sai de um poço no chão, à direita do salão (`mundo/escada/poco.png`). Para voltar, ande até a beira e aperte **baixo**. O Pai desce os degraus, escurece e some atrás da borda; a borda é o nó `cobertura do poco`, que só aparece durante a descida.
 - **Iluminação:** penumbra roxa e azul com luzes piscando. A visão base do Pai é 48.
@@ -132,14 +136,51 @@ O contorno do prédio é o mesmo do 1º andar, mas o miolo foi redesenhado:
 
 | Sala | Monstros |
 |---|---|
-| Sala de Comando | nenhum: **o Pai começa aqui**, em frente ao console. Os monitores (`Props/centro-controle`, E: olhar) mostram o filho |
+| Sala de Comando | nenhum: **o Pai começa aqui**, em frente ao console. Os monitores (`Props/centro-controle`, E: olhar) mostram o filho e têm um brilho azul que oscila de leve (`BrilhoMonitores`, `mundo/salas/luz_oscilante.gd`) |
 | Sala da Aranha (alavanca) | 3 mini aranhas (aranha pequena em escala 0,6) |
-| Sala 1 | nenhum |
-| Sala Sul | 3 esqueletos |
-| Sala Nordeste | a definir |
-| Sala Sudeste | a definir |
+| Sala 1 | nenhum. O bilhete `Props/bilhete curativo` ensina a receita de curativo |
+| Sala Sul (tumba) | 3 esqueletos **dormindo** até o baú abrir |
+| Sala Nordeste | 3 olhos malignos vermelhos **fixos na parede**. A porta abre só com a chave |
+| Sala Sudeste | **Chama Sombria**, mini-chefe da arena. Vencer libera a escada |
 
-Olho vermelho, olho azul e chama sombria têm cena pronta, mas ainda não estão em nenhum andar.
+## Projéteis (`jogo/projetil.gd`)
+
+A Area2D do projétil só percebe o que se move (o Pai e os monstros). Para que ele pare em paredes de tile e em móveis, um raio curto testa, a cada quadro, o caminho do ponto atual até o próximo. Piscina, poço e muretas continuam sendo atravessados.
+
+## Progressão do 1º andar (flags do Jogo)
+
+| Passo | Onde | Como funciona |
+|---|---|---|
+| 1 | Sala de Comando | O Pai começa **sem arma**, com socos (dano 1, alcance curto). Os socos quebram caixas e barris, que dão madeira. O **Porrete de madeira** (dano 3, 3 madeiras) já vem no livro. |
+| 2 | Sala 1 | O bilhete ensina o **curativo** (deixou de ser receita inicial). |
+| 3 | Sala da Aranha | A alavanca do corredor levanta o portão (flag `portao_aranha_aberto`). |
+| 4 | Sala Sul | O baú `Props/bau tumba` (`mundo/bau/bau.gd`, E: abrir) dá as flags `tumba_aberta` e `chave_nordeste` e mostra "Você encontrou uma chave enferrujada.". `tumba_aberta` acorda os esqueletos (`dormindo` e `flag_acordar` no `inimigo.gd`) e ativa a arena (`flag_para_ativar` no `sala.gd`). |
+| 5 | Sala Nordeste | A porta (`flag_necessaria = "chave_nordeste"` no `porta.gd`) mostra "Trancada. Precisa de uma chave." até o Pai ter a chave. Trancada, ela não acende a sala. |
+| 6 | Sala Sudeste | Arena com `flag_ao_vencer = "escada_liberada"`: matar a Chama Sombria libera a escada. Sem monstros, ela contaria como vencida quando o Pai entrasse. |
+| 7 | Escada | `flag_necessaria = "escada_liberada"` no `escada.gd`. Antes disso aparece "Algo sombrio bloqueia a passagem.". |
+
+- Alavanca, baú e arena vencida **salvam na hora** (`Jogo.salvar_progresso()`).
+- Um monstro dormindo também acorda se levar um golpe.
+- Os exports novos servem para qualquer sala, porta, escada ou monstro: basta preencher o nome da flag no Inspetor.
+- **Arte:** o porrete é `assets/staffs/7.png` (32 px, encolhido para o tamanho dos outros ícones). O baú (fechado e aberto) e a chave são recortes de `assets/tile/Tiled_files/Objects.png`.
+
+Os olhos azuis têm cena pronta e vão para o 2º andar.
+
+### Olhos malignos (Nordeste) e Chama Sombria (Sudeste)
+
+Tudo fica no `inimigo.gd` e os números ficam em `Itens.INIMIGOS`, para ajustar.
+
+- **Olho maligno vermelho** (`fixo`): não anda. Atira um projétil lento (`velocidade_projetil` 45) quando vê o Pai na sala acesa.
+  - Se o Pai chega a `distancia_fechar` (28 px), o olho **fecha** por `tempo_fechado` (2,5 s): fica invulnerável (o golpe só faz um "tink" cinza) e não atira.
+  - Depois abre e fica pelo menos `tempo_aberto` (1,5 s) vulnerável. É a hora de bater.
+  - A animação `closed` usa o quadro `death_hit_00` (olho de pálpebra fechada).
+  - Drop: pó mágico.
+  - Pés em (104, -78), (160, -78) e (210, -78), na parede do fundo.
+- **Chama Sombria** (mini-chefe): vida 18, `escala` 1,5. Mantém distância e atira.
+  - O projétil que acerta **apaga a luz do Pai** por `apagar_luz` (3 s), com `pai.apagar_luz()`. As luzes da sala continuam.
+  - Abaixo de `furia_vida` (50%): fica 1,6x mais rápida, atira mais e deixa um **rastro de fogo** (`RastroFogo`, no fim do `inimigo.gd`). O rastro é a própria chama sombria em miniatura, que dá `rastro_dano` a quem pisar e some em `rastro_duracao` (3 s).
+  - Drop: fragmento sombrio.
+  - Pés em (432, 232), no centro do Sudeste. A morte dela vence a arena e dá `escada_liberada`.
 
 Arte: **Evil Eye | Pixel Monsters Vol. 13** de elesrech (`assets/EvilEye_Pixel_Monsters_Vol_13_COLOR_OUTLINES/`, cores red e blue) e **32x32 Micro Pixel Art - Elemental Monsters Pack** (`assets/32x32_Pixel_Art_Monsters_Pack/`, `03_Shadow_Flame`). As duas licenças permitem uso comercial e pedem crédito opcional. O pacote do Evil Eye também tem as cores green e purple, prontas para virar variações.
 
@@ -172,6 +213,19 @@ Arte: **Evil Eye | Pixel Monsters Vol. 13** de elesrech (`assets/EvilEye_Pixel_M
   - mensagens curtas;
   - a dica "E: ler";
   - o painel de texto dos bilhetes.
+
+## Save (`jogo/jogo.gd`)
+
+- Arquivo: `user://save.json` (no Windows, `%APPDATA%\Godot\app_userdata\RescueMe\save.json`). É JSON legível.
+- Guarda: inventário, armas, atalhos (slots e o atual), curativos, receitas, melhorias, monstros e caixas destruídos, salas visitadas e vencidas, tipos derrotados, materiais no chão, `flags` e o checkpoint.
+- **Quando grava:**
+  - sempre que o checkpoint muda (`Jogo.definir_checkpoint()`): primeira entrada num andar, chegada por escada e sala-arena vencida;
+  - ao fechar a janela. O Pai volta ao último checkpoint, mas o que ele pegou depois disso fica.
+- **Ao abrir o jogo:** se houver save, continua dele. Se o checkpoint for de outro andar, o jogo já abre nesse andar. Rodar uma cena solta (F6) carrega o estado, mas não troca de andar.
+- **Novo jogo:** ainda não há tela inicial. Em desenvolvimento, **Ctrl+Shift+N** apaga o save e recomeça no 1º andar. Esse atalho não existe no jogo exportado.
+- **Flags:** `Jogo.set_flag("alavanca_porao", true)` e `Jogo.get_flag("alavanca_porao", false)`. Use valores simples (bool, número ou texto). Elas entram no próximo save.
+- **Versão:** `VERSAO_SAVE` (hoje 1). Um save de versão mais nova que o jogo não é carregado nem apagado. Para mudar o formato, suba a versão e trate a diferença em `_migrar_save()`.
+- Um save ilegível não trava o jogo: ele começa do zero e avisa no console.
 
 ## Colisão e ordem de desenho
 

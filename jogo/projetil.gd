@@ -1,12 +1,14 @@
 class_name Projetil
 extends Area2D
 ## Projétil mágico dos monstros que atacam de longe (GDD 6.1: criatura mágica,
-## 6.2: feiticeiro espectral). Some ao bater numa parede ou no Pai.
+## 6.2: feiticeiro espectral). Some ao bater numa parede, num móvel ou no Pai.
 
 var direcao := Vector2.RIGHT
 var velocidade := 110.0
 var dano := 1
 var cor := Color(0.75, 0.45, 1.0)
+## Segundos que a luz do Pai fica apagada quando o projétil acerta (0 = não apaga).
+var apagar_luz := 0.0
 var _vida := 2.5
 
 static var _luz_tex: Texture2D
@@ -47,11 +49,35 @@ func _ready() -> void:
 
 
 func _physics_process(delta: float) -> void:
-	position += direcao * velocidade * delta
+	var passo := direcao * velocidade * delta
+	if _bate_em_solido(global_position, global_position + passo):
+		queue_free()
+		return
+	position += passo
 	_vida -= delta
 	if _vida <= 0.0:
 		queue_free()
 	queue_redraw()
+
+
+## A Area2D só percebe quem se move (o Pai, monstros). Paredes de tile e
+## corpos parados (móveis, caixas) são testados com um raio curto,
+## do ponto atual até o próximo. Piscina, poço e muretas são atravessados.
+func _bate_em_solido(de: Vector2, ate: Vector2) -> bool:
+	var espaco := get_world_2d().direct_space_state
+	var q := PhysicsRayQueryParameters2D.create(de, ate, collision_mask)
+	var ignorar: Array[RID] = []
+	for i in 4:
+		q.exclude = ignorar
+		var hit := espaco.intersect_ray(q)
+		if hit.is_empty():
+			return false
+		var c: Object = hit.collider
+		if c is CharacterBody2D or (c is Node and c.is_in_group("obstaculo_baixo")):
+			ignorar.append(hit.rid)  # quem se move fica com a Area2D
+			continue
+		return true
+	return false
 
 
 func _draw() -> void:
@@ -62,7 +88,9 @@ func _draw() -> void:
 
 func _on_body_entered(body: Node) -> void:
 	if body.is_in_group("inimigos") or body.is_in_group("obstaculo_baixo"):
-		return  # passa por cima de piscina, poço e muretas
+		return  # passa por monstros e por cima de piscina, poço e muretas
 	if body.is_in_group("player"):
 		body.levar_dano(dano, global_position - direcao * 8.0)
+		if apagar_luz > 0.0 and body.has_method("apagar_luz"):
+			body.apagar_luz(apagar_luz)
 	queue_free()

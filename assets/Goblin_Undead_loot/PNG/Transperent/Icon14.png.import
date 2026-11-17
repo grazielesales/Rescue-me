@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dehhsy8kawdkk"
-path="res://.godot/imported/Icon14.png-4c0f346f91f88a5233371a88b1ad5086.ctex"
+path="res://.godot/imported/Icon14.png-13bffd701f1df2aebc15fdb8be32b406.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://PNG/Transperent/Icon14.png"
-dest_files=["res://.godot/imported/Icon14.png-4c0f346f91f88a5233371a88b1ad5086.ctex"]
+source_file="res://assets/Goblin_Undead_loot/PNG/Transperent/Icon14.png"
+dest_files=["res://.godot/imported/Icon14.png-13bffd701f1df2aebc15fdb8be32b406.ctex"]
 
 [params]
 

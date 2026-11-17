@@ -36,8 +36,9 @@ const MAO_ARMA := {
 	"idle_side": [Vector2(0, -4.75)],
 	"walk_side": [Vector2(0, -5.25), Vector2(-1, -4.75), Vector2(-4.25, -6.25)],
 }
-## Ponto do cabo dentro do ícone 16x16 (o ícone fica na diagonal, ponta para cima/direita).
-const CABO_ARMA := Vector2(3, 13)
+## Ponto do cabo dentro do ícone (o ícone fica na diagonal, ponta para
+## cima/direita). Vem de Itens.cabo_arma(): (3, 13) nos ícones 16x16 ou o
+## "sprite_cabo" da arma.
 ## Pose de ataque: o personagem não tem animação de golpe, então usamos os
 ## quadros de andar onde o braço da arma está para trás (preparo) e para a
 ## frente (golpe). Índices dos quadros de walk_<direção>.
@@ -72,6 +73,7 @@ var _arma: Node2D  ## pivô na mão; gira no ataque
 var _arma_sprite: Sprite2D
 var _balanco: Tween
 var _balancando := false
+var _luz_tween: Tween
 
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var vision: PointLight2D = $Visao
@@ -213,6 +215,21 @@ func aplicar_melhorias() -> void:
 	vision.texture_scale = vision_radius / LIGHT_TEXTURE_RADIUS
 
 
+## Apaga a luz que acompanha o Pai por `segundos` (chama sombria). As luzes
+## das salas continuam. Outro acerto enquanto está apagada renova o tempo.
+func apagar_luz(segundos: float) -> void:
+	if _luz_tween:
+		_luz_tween.kill()
+	_luz_tween = create_tween()
+	_luz_tween.tween_property(vision, "energy", 0.0, 0.15)
+	_luz_tween.tween_interval(segundos)
+	_luz_tween.tween_property(vision, "energy", vision_energy, 0.6)
+
+
+func luz_apagada() -> bool:
+	return _luz_tween != null and _luz_tween.is_running()
+
+
 func _morrer() -> void:
 	morto = true
 	velocity = Vector2.ZERO
@@ -294,7 +311,6 @@ func _criar_arma() -> void:
 	_arma_sprite = Sprite2D.new()
 	_arma_sprite.light_mask = 2  # iluminado pela Visao, como o sprite do Pai
 	_arma_sprite.centered = false
-	_arma_sprite.offset = -CABO_ARMA
 	_arma.add_child(_arma_sprite)
 	sprite.frame_changed.connect(_posicionar_arma)
 	Jogo.armas_mudou.connect(_atualizar_arma)
@@ -308,6 +324,10 @@ func _atualizar_arma() -> void:
 	var tex := Itens.sprite_arma(id)
 	_arma_sprite.texture = tex
 	_arma_sprite.modulate = Itens.ARMAS[id].get("sprite_cor", Color.WHITE)
+	# ícones maiores que 16 px (ex.: 32 px) encolhem para o mesmo tamanho na mão
+	_arma_sprite.offset = -Itens.cabo_arma(id)
+	_arma_sprite.scale = Vector2.ONE * Itens.escala_icone_arma(id)
+	# socos: sem arma na mão (só a pose de golpe e o arco)
 	_arma.visible = tex != null and not morto
 
 
