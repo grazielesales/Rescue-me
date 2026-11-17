@@ -1,0 +1,245 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://inimigos/inimigo.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/32x32_Pixel_Art_Monsters_Pack/02_Elementals_And_Magic/03_Shadow_Flame/ShadowFlame_Idle_6f.png" id="t1"]
+[ext_resource type="Texture2D" path="res://assets/32x32_Pixel_Art_Monsters_Pack/02_Elementals_And_Magic/03_Shadow_Flame/ShadowFlame_Move_6f.png" id="t2"]
+[ext_resource type="Texture2D" path="res://assets/32x32_Pixel_Art_Monsters_Pack/02_Elementals_And_Magic/03_Shadow_Flame/ShadowFlame_Attack_6f.png" id="t3"]
+[ext_resource type="Texture2D" path="res://assets/32x32_Pixel_Art_Monsters_Pack/02_Elementals_And_Magic/03_Shadow_Flame/ShadowFlame_Hit_4f.png" id="t4"]
+[ext_resource type="Texture2D" path="res://assets/32x32_Pixel_Art_Monsters_Pack/02_Elementals_And_Magic/03_Shadow_Flame/ShadowFlame_Death_6f.png" id="t5"]
+
+[sub_resource type="AtlasTexture" id="a1"]
+atlas = ExtResource("t1")
+region = Rect2(0, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="a2"]
+atlas = ExtResource("t1")
+region = Rect2(64, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="a3"]
+atlas = ExtResource("t1")
+region = Rect2(128, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="a4"]
+atlas = ExtResource("t1")
+region = Rect2(192, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="a5"]
+atlas = ExtResource("t1")
+region = Rect2(256, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="a6"]
+atlas = ExtResource("t1")
+region = Rect2(320, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="a7"]
+atlas = ExtResource("t2")
+region = Rect2(0, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="a8"]
+atlas = ExtResource("t2")
+region = Rect2(64, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="a9"]
+atlas = ExtResource("t2")
+region = Rect2(128, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="a10"]
+atlas = ExtResource("t2")
+region = Rect2(192, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="a11"]
+atlas = ExtResource("t2")
+region = Rect2(256, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="a12"]
+atlas = ExtResource("t2")
+region = Rect2(320, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="a13"]
+atlas = ExtResource("t3")
+region = Rect2(0, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="a14"]
+atlas = ExtResource("t3")
+region = Rect2(64, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="a15"]
+atlas = ExtResource("t3")
+region = Rect2(128, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="a16"]
+atlas = ExtResource("t3")
+region = Rect2(192, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="a17"]
+atlas = ExtResource("t3")
+region = Rect2(256, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="a18"]
+atlas = ExtResource("t3")
+region = Rect2(320, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="a19"]
+atlas = ExtResource("t4")
+region = Rect2(0, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="a20"]
+atlas = ExtResource("t4")
+region = Rect2(64, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="a21"]
+atlas = ExtResource("t4")
+region = Rect2(128, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="a22"]
+atlas = ExtResource("t4")
+region = Rect2(192, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="a23"]
+atlas = ExtResource("t5")
+region = Rect2(0, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="a24"]
+atlas = ExtResource("t5")
+region = Rect2(64, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="a25"]
+atlas = ExtResource("t5")
+region = Rect2(128, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="a26"]
+atlas = ExtResource("t5")
+region = Rect2(192, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="a27"]
+atlas = ExtResource("t5")
+region = Rect2(256, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="a28"]
+atlas = ExtResource("t5")
+region = Rect2(320, 0, 64, 64)
+
+[sub_resource type="SpriteFrames" id="frames"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("a1")
+}, {
+"duration": 1.0,
+"texture": SubResource("a2")
+}, {
+"duration": 1.0,
+"texture": SubResource("a3")
+}, {
+"duration": 1.0,
+"texture": SubResource("a4")
+}, {
+"duration": 1.0,
+"texture": SubResource("a5")
+}, {
+"duration": 1.0,
+"texture": SubResource("a6")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 8.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("a7")
+}, {
+"duration": 1.0,
+"texture": SubResource("a8")
+}, {
+"duration": 1.0,
+"texture": SubResource("a9")
+}, {
+"duration": 1.0,
+"texture": SubResource("a10")
+}, {
+"duration": 1.0,
+"texture": SubResource("a11")
+}, {
+"duration": 1.0,
+"texture": SubResource("a12")
+}],
+"loop": true,
+"name": &"walk",
+"speed": 10.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("a13")
+}, {
+"duration": 1.0,
+"texture": SubResource("a14")
+}, {
+"duration": 1.0,
+"texture": SubResource("a15")
+}, {
+"duration": 1.0,
+"texture": SubResource("a16")
+}, {
+"duration": 1.0,
+"texture": SubResource("a17")
+}, {
+"duration": 1.0,
+"texture": SubResource("a18")
+}],
+"loop": false,
+"name": &"attack",
+"speed": 12.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("a19")
+}, {
+"duration": 1.0,
+"texture": SubResource("a20")
+}, {
+"duration": 1.0,
+"texture": SubResource("a21")
+}, {
+"duration": 1.0,
+"texture": SubResource("a22")
+}],
+"loop": false,
+"name": &"hurt",
+"speed": 14.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("a23")
+}, {
+"duration": 1.0,
+"texture": SubResource("a24")
+}, {
+"duration": 1.0,
+"texture": SubResource("a25")
+}, {
+"duration": 1.0,
+"texture": SubResource("a26")
+}, {
+"duration": 1.0,
+"texture": SubResource("a27")
+}, {
+"duration": 1.0,
+"texture": SubResource("a28")
+}],
+"loop": false,
+"name": &"death",
+"speed": 10.0
+}]
+
+[node name="chama_sombria" type="CharacterBody2D"]
+script = ExtResource("1_script")
+editor_description = "Chama Sombria (32x32 Pixel Art Monsters Pack, 03_Shadow_Flame). Ataca de longe com bolas de fogo."
+tipo = "Chama sombria"
+altura_pes = 18.0
+largura_corpo = 20.0
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+sprite_frames = SubResource("frames")
+animation = &"idle"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]

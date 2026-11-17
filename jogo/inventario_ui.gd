@@ -7,8 +7,8 @@ extends CanvasLayer
 ## Visual: survival horror clássico em pixel art. Ícones das folhas
 ## warrior-items__asset.png e xevin-wizard-items__asset.png (16x16).
 
-const GUERREIRO := "res://warrior-items__asset.png"
-const MAGO := "res://xevin-wizard-items__asset.png"
+const GUERREIRO := "res://assets/itens-armas/warrior-items__asset.png"
+const MAGO := "res://assets/itens-armas/xevin-wizard-items__asset.png"
 const ICONE := 16
 
 ## id do item -> [folha, coluna, linha, tinta opcional]

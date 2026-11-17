@@ -1,0 +1,167 @@
+[gd_scene format=3 uid="uid://cx2wjjiv4hm73"]
+
+[ext_resource type="Script" uid="uid://b67lvpfe6byep" path="res://personagens/pai/pai.gd" id="1_lrxtp"]
+[ext_resource type="Texture2D" uid="uid://dmfdxs78mgaxu" path="res://assets/Modern tiles_Free/Old/idle_32x32_2.png" id="2_ugawo"]
+[ext_resource type="Texture2D" uid="uid://bpe1ywtfccfuy" path="res://assets/Modern tiles_Free/Old/mv/Character_2_32x32_RPGMAKER.png" id="3_emuy8"]
+[ext_resource type="Script" path="res://personagens/pai/camera_pixel.gd" id="9_camera"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_pj4q2"]
+atlas = ExtResource("2_ugawo")
+region = Rect2(96, 0, 32, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_fqivd"]
+atlas = ExtResource("2_ugawo")
+region = Rect2(64, 0, 32, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_q03cu"]
+atlas = ExtResource("2_ugawo")
+region = Rect2(32, 0, 32, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ixybp"]
+atlas = ExtResource("3_emuy8")
+region = Rect2(0, 0, 32, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_the6y"]
+atlas = ExtResource("3_emuy8")
+region = Rect2(32, 0, 32, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_0sg4u"]
+atlas = ExtResource("3_emuy8")
+region = Rect2(64, 0, 32, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_y36rr"]
+atlas = ExtResource("3_emuy8")
+region = Rect2(0, 64, 32, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_3x76k"]
+atlas = ExtResource("3_emuy8")
+region = Rect2(32, 64, 32, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_pmchn"]
+atlas = ExtResource("3_emuy8")
+region = Rect2(64, 64, 32, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_umn1k"]
+atlas = ExtResource("3_emuy8")
+region = Rect2(0, 192, 32, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_pbkjt"]
+atlas = ExtResource("3_emuy8")
+region = Rect2(32, 192, 32, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_4bhtr"]
+atlas = ExtResource("3_emuy8")
+region = Rect2(64, 192, 32, 64)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_0duit"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_pj4q2")
+}],
+"loop": 1,
+"name": &"idle_down",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_fqivd")
+}],
+"loop": 1,
+"name": &"idle_side",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_q03cu")
+}],
+"loop": 1,
+"name": &"idle_up",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ixybp")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_the6y")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_0sg4u")
+}],
+"loop": 1,
+"name": &"walk_down",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_y36rr")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_3x76k")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_pmchn")
+}],
+"loop": 1,
+"name": &"walk_side",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_umn1k")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_pbkjt")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_4bhtr")
+}],
+"loop": 1,
+"name": &"walk_up",
+"speed": 5.0
+}]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_0duit"]
+size = Vector2(10, 5)
+
+[sub_resource type="Gradient" id="Gradient_visao"]
+interpolation_mode = 2
+offsets = PackedFloat32Array(0, 0.5, 0.7, 0.86, 1)
+colors = PackedColorArray(1, 1, 1, 1, 0.72, 0.72, 0.72, 1, 0.42, 0.42, 0.42, 1, 0.16, 0.16, 0.16, 1, 0, 0, 0, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_visao"]
+gradient = SubResource("Gradient_visao")
+width = 256
+height = 256
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(1, 0.5)
+
+[node name="pai" type="CharacterBody2D" unique_id=100439784]
+script = ExtResource("1_lrxtp")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=909581800]
+light_mask = 2
+position = Vector2(0, -16)
+scale = Vector2(0.5, 0.5)
+sprite_frames = SubResource("SpriteFrames_0duit")
+animation = &"idle_side"
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=1779584449]
+position = Vector2(0, -16)
+zoom = Vector2(3, 3)
+script = ExtResource("9_camera")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=907732761]
+position = Vector2(0, -2.5)
+shape = SubResource("RectangleShape2D_0duit")
+
+[node name="Visao" type="PointLight2D" parent="." unique_id=1418230673]
+position = Vector2(0, -12)
+range_item_cull_mask = 3
+editor_description = "Ilumina a camada 1 (cenário) e a 2 (sprite do Pai). As luzes das salas só pegam a camada 1, então não somam no Pai."
+color = Color(0.72, 0.78, 0.95, 1)
+energy = 0.9
+texture = SubResource("GradientTexture2D_visao")
+texture_scale = 0.3125

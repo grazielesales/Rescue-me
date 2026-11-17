@@ -35,6 +35,11 @@ var salas_concluidas := {}
 var tipos_derrotados := {}
 ## Ponto de salvamento (GDD 3.4): {"cena", "pos"} ou {"cena", "escada"}.
 var checkpoint := {}
+## Materiais caídos que o Pai ainda não pegou, por cena:
+## cena -> {id: {"item", "qtd", "pos"}}. Continuam no chão ao morrer,
+## ao recomeçar e ao trocar de andar, até o Pai voltar e pegar.
+var drops := {}
+var _proximo_drop := 0
 
 var _hud: CanvasLayer
 var _livro: CanvasLayer
@@ -197,6 +202,48 @@ func registrar_morte(chave: String, tipo: String) -> void:
 
 func esta_morto(chave: String) -> bool:
 	return mortos.has(chave)
+
+
+# --- materiais no chão -------------------------------------------------------------
+
+## Guarda um material que caiu no chão da cena atual. Devolve o id do drop.
+func registrar_drop(item: String, qtd: int, pos: Vector2) -> String:
+	var id := str(_proximo_drop)
+	_proximo_drop += 1
+	var da_cena: Dictionary = drops.get_or_add(cena_atual(), {})
+	da_cena[id] = {"item": item, "qtd": qtd, "pos": pos}
+	return id
+
+
+func remover_drop(id: String) -> void:
+	var da_cena: Dictionary = drops.get(cena_atual(), {})
+	da_cena.erase(id)
+
+
+## Drops ainda no chão de uma cena (id -> dados).
+func drops_da_cena(cena: String) -> Dictionary:
+	return drops.get(cena, {})
+
+
+# --- linha de visão ----------------------------------------------------------------
+
+## true se nenhuma parede ou porta fechada fica entre `de` e `ate` (globais).
+## Móveis, monstros, a piscina e outras coisas baixas não bloqueiam.
+## Chame durante _physics_process.
+func linha_livre(de: Vector2, ate: Vector2) -> bool:
+	var espaco := get_tree().root.world_2d.direct_space_state
+	var q := PhysicsRayQueryParameters2D.create(de, ate, 1)
+	var ignorar: Array[RID] = []
+	for i in 12:
+		q.exclude = ignorar
+		var hit := espaco.intersect_ray(q)
+		if hit.is_empty():
+			return true
+		var c: Object = hit.collider
+		if c is TileMapLayer or (c is Node and c.has_method("bloquear")):
+			return false  # parede ou porta fechada
+		ignorar.append(hit.rid)
+	return true
 
 
 # --- inventário e crafting ---------------------------------------------------------

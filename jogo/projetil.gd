@@ -61,8 +61,8 @@ func _draw() -> void:
 
 
 func _on_body_entered(body: Node) -> void:
-	if body.is_in_group("inimigos"):
-		return
+	if body.is_in_group("inimigos") or body.is_in_group("obstaculo_baixo"):
+		return  # passa por cima de piscina, poço e muretas
 	if body.is_in_group("player"):
 		body.levar_dano(dano, global_position - direcao * 8.0)
 	queue_free()

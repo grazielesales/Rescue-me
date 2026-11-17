@@ -1,0 +1,15 @@
+Evil Eye | Pixel Monsters Vol. 13 CHANGELOG
+============================================
+
+Version 1.0.0 - 2026-06-06
+--------------------------
+-Release version.
+-Included animations:
+	- Fly_1
+	- Fly_2 
+	- Attack
+	- Hurt
+	- Death:
+		-death_hit
+		-death_fall
+		-death_land

@@ -9,7 +9,7 @@ extends CanvasLayer
 ##   Esse canto é ampliado pela maior escala inteira que cabe na janela.
 ## As mensagens do centro continuam no autoload Jogo.
 
-const PASTA := "res://HUD Containers/"
+const PASTA := "res://assets/HUD Containers/"
 const UI := "res://addons/pixel_ui_fantasy/"
 ## Mesmo espaço de desenho do livro: a escala do canto das armas é a do livro.
 const TELA_UI := Vector2(428, 242)

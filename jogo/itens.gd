@@ -7,12 +7,12 @@ const VIDA_PAI := 10
 ## Quanto um curativo recupera.
 const CURA := 4
 
-const _MED := "res://Medieval Free Pack ( Dev Essentials ).png"
-const _OBJ := "res://tile/Tiled_files/Objects.png"
-const _DP := "res://Dungeons and Pixels #U2014 Free Demo/"
+const _MED := "res://assets/Medieval Free Pack/Medieval Free Pack ( Dev Essentials ).png"
+const _OBJ := "res://assets/tile/Tiled_files/Objects.png"
+const _DP := "res://assets/Dungeons and Pixels #U2014 Free Demo/"
 ## Folhas de ícones 16x16 (4 colunas x 8 linhas) usadas para a arma na mão do Pai.
-const _GUERREIRO := "res://warrior-items__asset.png"
-const _MAGO := "res://xevin-wizard-items__asset.png"
+const _GUERREIRO := "res://assets/itens-armas/warrior-items__asset.png"
+const _MAGO := "res://assets/itens-armas/xevin-wizard-items__asset.png"
 const TAM_ICONE := 16
 
 ## Materiais (GDD 4.1). "cor" tinge o ícone.
@@ -61,8 +61,12 @@ const INIMIGOS := {
 	"Aranha pequena": {"vida": 2, "dano": 1, "velocidade": 55.0, "alcance": 14.0, "recarga": 0.9, "drops": [["teia", 1, 1, 1.0]]},
 	"Aranha grande": {"vida": 8, "dano": 2, "velocidade": 40.0, "alcance": 20.0, "recarga": 1.2, "drops": [["teia", 1, 2, 1.0], ["presa", 1, 1, 0.75]]},
 	"Aranha-mãe": {"vida": 16, "dano": 2, "velocidade": 38.0, "alcance": 22.0, "recarga": 1.1, "drops": [["presa", 2, 2, 1.0], ["teia", 2, 3, 1.0]], "receita": "adaga"},
-	"Esqueleto": {"vida": 6, "dano": 2, "velocidade": 28.0, "alcance": 16.0, "recarga": 1.3, "drops": [["osso", 1, 2, 1.0]]},
+	"Esqueleto": {"vida": 6, "dano": 2, "velocidade": 44.0, "alcance": 16.0, "recarga": 1.3, "drops": [["osso", 1, 2, 1.0]]},
 	"Zumbi": {"vida": 8, "dano": 2, "velocidade": 22.0, "alcance": 16.0, "recarga": 1.4, "drops": [["osso", 1, 1, 0.8], ["sucata", 1, 1, 0.5]]},
+	# 1º andar
+	"Olho maligno vermelho": {"vida": 3, "dano": 2, "velocidade": 45.0, "alcance": 16.0, "recarga": 1.1, "drops": [["osso", 1, 1, 0.6]]},
+	"Olho maligno azul": {"vida": 4, "dano": 1, "velocidade": 38.0, "alcance": 16.0, "recarga": 1.0, "drops": [["teia", 1, 1, 0.7]]},
+	"Chama sombria": {"vida": 5, "dano": 1, "velocidade": 25.0, "alcance": 100.0, "distancia": 60.0, "recarga": 2.0, "projetil": true, "drops": [["po_magico", 1, 1, 0.5], ["sucata", 1, 1, 0.5]]},
 	"Fantasma": {"vida": 4, "dano": 1, "velocidade": 35.0, "alcance": 14.0, "recarga": 1.0, "drops": [["ectoplasma", 1, 1, 1.0]]},
 	"Criatura mágica": {"vida": 5, "dano": 1, "velocidade": 35.0, "alcance": 110.0, "distancia": 70.0, "recarga": 1.8, "projetil": true, "drops": [["po_magico", 1, 1, 1.0]], "receita": "tocha"},
 	"Demônio": {"vida": 10, "dano": 2, "velocidade": 45.0, "alcance": 18.0, "recarga": 1.1, "drops": [["fragmento", 1, 1, 0.7], ["osso", 1, 1, 0.4]]},
