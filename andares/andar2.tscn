@@ -24,15 +24,8 @@
 [ext_resource type="PackedScene" path="res://inimigos/feiticeiro_espectral.tscn" id="23_2aa8j"]
 [ext_resource type="PackedScene" uid="uid://cx2wjjiv4hm73" path="res://personagens/pai/pai.tscn" id="24_6ik8q"]
 [ext_resource type="Script" uid="uid://c3oaug1hw0qnq" path="res://mundo/escada/escada.gd" id="25_5mo8o"]
-[ext_resource type="Texture2D" uid="uid://dtwderjmbi4c" path="res://assets/Dungeon Free/dungeon_window1.png" id="d1_dungeon_wi"]
-[ext_resource type="Texture2D" uid="uid://b76drjbe72opj" path="res://assets/Dungeon Free/dungeon_window2.png" id="d2_dungeon_wi"]
-[ext_resource type="Texture2D" uid="uid://dx8hxtfdthwk6" path="res://assets/Dungeon Free/dungeon_window3.png" id="d3_dungeon_wi"]
-[ext_resource type="Texture2D" uid="uid://b6iqh2x05vjx0" path="res://assets/Dungeon Free/dungeon_window4.png" id="d4_dungeon_wi"]
-[ext_resource type="Texture2D" uid="uid://dhrqvihixs1v8" path="res://assets/Dungeon Free/dungeon_window5.png" id="d5_dungeon_wi"]
-[ext_resource type="Texture2D" uid="uid://b5xp7vfw447fx" path="res://assets/Dungeon Free/dungeon_window6.png" id="d6_dungeon_wi"]
 [ext_resource type="Texture2D" uid="uid://bjb2hyvodvjyk" path="res://assets/Demo/Furniture (802).png" id="d7_furniture8"]
 [ext_resource type="Texture2D" uid="uid://j1ih81lnoyye" path="res://assets/Demo/Furniture (155).png" id="d8_furniture1"]
-[ext_resource type="Texture2D" uid="uid://dbe60vjtnn1ol" path="res://assets/Dungeon Free/dungeon_window_barred.png" id="d9_dungeon_wi"]
 [ext_resource type="Texture2D" uid="uid://bwaw4yvjvdibo" path="res://assets/Demo/Furniture (744).png" id="d10_furniture7"]
 [ext_resource type="Texture2D" uid="uid://cg0og0frk864n" path="res://assets/Demo/Furniture (1047).png" id="d12_furniture1"]
 [ext_resource type="PackedScene" path="res://inimigos/demonio.tscn" id="demonio_cena"]
@@ -2664,30 +2657,54 @@ size = Vector2(42, 8)
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_dec5"]
 size = Vector2(32, 6)
 
+[sub_resource type="AtlasTexture" id="AtlasTexture_tocha_parede0"]
+atlas = ExtResource("melh_fogo")
+region = Rect2(32, 0, 32, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_tocha_parede1"]
+atlas = ExtResource("melh_fogo")
+region = Rect2(32, 48, 32, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_tocha_parede2"]
+atlas = ExtResource("melh_fogo")
+region = Rect2(32, 96, 32, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_tocha_parede3"]
+atlas = ExtResource("melh_fogo")
+region = Rect2(32, 144, 32, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_tocha_parede4"]
+atlas = ExtResource("melh_fogo")
+region = Rect2(32, 192, 32, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_tocha_parede5"]
+atlas = ExtResource("melh_fogo")
+region = Rect2(32, 240, 32, 48)
+
 [sub_resource type="SpriteFrames" id="SpriteFrames_tocha_parede"]
 animations = [{
 "frames": [{
 "duration": 1.0,
-"texture": ExtResource("d1_dungeon_wi")
+"texture": SubResource("AtlasTexture_tocha_parede0")
 }, {
 "duration": 1.0,
-"texture": ExtResource("d2_dungeon_wi")
+"texture": SubResource("AtlasTexture_tocha_parede1")
 }, {
 "duration": 1.0,
-"texture": ExtResource("d3_dungeon_wi")
+"texture": SubResource("AtlasTexture_tocha_parede2")
 }, {
 "duration": 1.0,
-"texture": ExtResource("d4_dungeon_wi")
+"texture": SubResource("AtlasTexture_tocha_parede3")
 }, {
 "duration": 1.0,
-"texture": ExtResource("d5_dungeon_wi")
+"texture": SubResource("AtlasTexture_tocha_parede4")
 }, {
 "duration": 1.0,
-"texture": ExtResource("d6_dungeon_wi")
+"texture": SubResource("AtlasTexture_tocha_parede5")
 }],
 "loop": 1,
 "name": &"default",
-"speed": 8.0
+"speed": 6.6667
 }]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_dec6"]
@@ -3374,6 +3391,7 @@ region_rect = Rect2(97, 112, 30, 20)
 z_index = -1
 position = Vector2(-344, 24)
 sprite_frames = SubResource("SpriteFrames_tocha_parede")
+offset = Vector2(-6, 0)
 autoplay = "default"
 frame_progress = 0.42
 
@@ -3381,6 +3399,7 @@ frame_progress = 0.42
 z_index = -1
 position = Vector2(-264, 24)
 sprite_frames = SubResource("SpriteFrames_tocha_parede")
+offset = Vector2(-6, 0)
 autoplay = "default"
 frame_progress = 0.09
 
@@ -3388,6 +3407,7 @@ frame_progress = 0.09
 z_index = -1
 position = Vector2(-48, 24)
 sprite_frames = SubResource("SpriteFrames_tocha_parede")
+offset = Vector2(-6, 0)
 autoplay = "default"
 frame_progress = 0.51
 
@@ -3395,6 +3415,7 @@ frame_progress = 0.51
 z_index = -1
 position = Vector2(100, -10)
 sprite_frames = SubResource("SpriteFrames_tocha_parede")
+offset = Vector2(-6, 0)
 autoplay = "default"
 frame_progress = 0.56
 
@@ -3402,28 +3423,37 @@ frame_progress = 0.56
 z_index = -1
 position = Vector2(172, 38)
 sprite_frames = SubResource("SpriteFrames_tocha_parede")
+offset = Vector2(-6, 0)
 autoplay = "default"
 frame_progress = 0.65
 
 [node name="janela gradeada 1" type="Sprite2D" parent="Props" unique_id=1270252923]
 z_index = -1
 position = Vector2(-392, 24)
-texture = ExtResource("d9_dungeon_wi")
+texture = ExtResource("6_syfj5")
+region_enabled = true
+region_rect = Rect2(192, 416, 32, 32)
 
 [node name="janela gradeada 2" type="Sprite2D" parent="Props" unique_id=1000911954]
 z_index = -1
 position = Vector2(-96, 24)
-texture = ExtResource("d9_dungeon_wi")
+texture = ExtResource("6_syfj5")
+region_enabled = true
+region_rect = Rect2(192, 416, 32, 32)
 
 [node name="janela gradeada 3" type="Sprite2D" parent="Props" unique_id=573392624]
 z_index = -1
 position = Vector2(0, 24)
-texture = ExtResource("d9_dungeon_wi")
+texture = ExtResource("6_syfj5")
+region_enabled = true
+region_rect = Rect2(192, 416, 32, 32)
 
 [node name="janela gradeada 4" type="Sprite2D" parent="Props" unique_id=1064669077]
 z_index = -1
 position = Vector2(240, 38)
-texture = ExtResource("d9_dungeon_wi")
+texture = ExtResource("6_syfj5")
+region_enabled = true
+region_rect = Rect2(192, 416, 32, 32)
 
 [node name="armadura 1" type="Sprite2D" parent="Props" unique_id=1365438422]
 position = Vector2(-174, 46)
@@ -3517,6 +3547,7 @@ shape = SubResource("RectangleShape2D_dec8")
 z_index = -1
 position = Vector2(-24, 184)
 sprite_frames = SubResource("SpriteFrames_tocha_parede")
+offset = Vector2(-6, 0)
 autoplay = "default"
 frame_progress = 0.38
 
@@ -3524,6 +3555,7 @@ frame_progress = 0.38
 z_index = -1
 position = Vector2(60, 184)
 sprite_frames = SubResource("SpriteFrames_tocha_parede")
+offset = Vector2(-6, 0)
 autoplay = "default"
 frame_progress = 0.85
 
@@ -3569,6 +3601,7 @@ shape = SubResource("RectangleShape2D_dec10")
 z_index = -1
 position = Vector2(200, 184)
 sprite_frames = SubResource("SpriteFrames_tocha_parede")
+offset = Vector2(-6, 0)
 autoplay = "default"
 frame_progress = 0.08
 
@@ -3576,6 +3609,7 @@ frame_progress = 0.08
 z_index = -1
 position = Vector2(288, 184)
 sprite_frames = SubResource("SpriteFrames_tocha_parede")
+offset = Vector2(-6, 0)
 autoplay = "default"
 frame_progress = 0.83
 
@@ -3629,6 +3663,7 @@ shape = SubResource("RectangleShape2D_dec12")
 z_index = -1
 position = Vector2(376, 152)
 sprite_frames = SubResource("SpriteFrames_tocha_parede")
+offset = Vector2(-6, 0)
 autoplay = "default"
 frame_progress = 0.77
 
@@ -3636,6 +3671,7 @@ frame_progress = 0.77
 z_index = -1
 position = Vector2(488, 152)
 sprite_frames = SubResource("SpriteFrames_tocha_parede")
+offset = Vector2(-6, 0)
 autoplay = "default"
 frame_progress = 0.86
 

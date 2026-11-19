@@ -95,6 +95,9 @@ O contorno do prédio é o mesmo do 1º andar, mas o miolo foi redesenhado:
 
 - **Poço da escada:** quem chega do 1º andar sai de um poço no chão, à direita do salão (`mundo/escada/poco.png`). Para voltar, ande até a beira e aperte **baixo**. O Pai desce os degraus, escurece e some atrás da borda; a borda é o nó `cobertura do poco`, que só aparece durante a descida.
 - **Iluminação:** penumbra roxa e azul com luzes piscando. A visão base do Pai é 48.
+- **Tochas e janelas da parede** vêm da pasta `assets/tile`, a mesma das paredes (a pasta `Dungeon Free` saiu do projeto):
+  - `Props/tocha na parede 1` a `11`: a tocha de tigela de `Tiled_files/fire_animation.png` (colunas 2 e 3, 6 quadros de 48 px, `SpriteFrames_tocha_parede`), com `offset` (-6, 0) para a haste ficar no ponto do nó;
+  - `Props/janela gradeada 1` a `4`: a janela com grade de `Tiled_files/walls_floor.png`, recorte `Rect2(192, 416, 32, 32)`.
 
 ## Decoração do 1º andar
 
@@ -182,15 +185,27 @@ A antiga sala dos olhos virou o covil da **bruxa**: o depósito de caixas e os 3
 - O barril e a caixa quebráveis do canto direito continuaram (a madeira do 1º andar não mudou muito).
 - Depois de mexer nos móveis, confira se a bruxa ainda alcança o Pai: o círculo é a entrada da sala.
 
-## Fosso da Sala Sudeste (arena da Chama Sombria)
+## Laboratório do Frankie (Sala Sudeste, 1º andar)
 
-A Sala Sudeste não tem mais paredes em volta nem porta: virou um fosso (11×6 tiles, células 21 a 31 por 11 a 17) do mesmo jeito do fosso do bolsão oeste, nas mesmas camadas (`Map/fosso_fundo` e `Map/fosso`). Saiu a parede fina da esquerda e a porta lateral; as paredes do norte, do leste e do sul ficaram, porque são a borda do mapa.
+A Sala Sudeste continua uma sala comum (paredes e a porta lateral) e virou o **laboratório do Frankie**: o lugar onde ele foi criado. Ele é o mini-chefe da arena (1 Frankie só).
 
-- **Entrada:** do corredor da esquerda, pelo beiral encostado na parede do norte, até a escada no canto de cima à esquerda. A colisão das bordas e da parede do fundo é `Colisoes/fosso sudeste`.
-- **Grade da escada** (`Props/grade da escada sudeste`, `mundo/portas/grade_escada.gd`): faz o papel da porta da arena. Começa aberta; quando o Pai desce e a arena tranca, a grade baixa e ele fica preso com a Chama Sombria; vencendo, ela sobe de novo. Ela está em `portas` da `SalaSudeste`. Também serve para trancar uma escada com chave (`flag_necessaria`).
-- `areas` da sala = só o fundo do fosso: a arena e a Chama Sombria só reagem quando o Pai desce a escada.
-- O baú, os vasos, o ouro, a caixa e o barril da sala foram para dentro do fosso; a Chama Sombria está no meio dele.
-- No corredor ao lado, `barril leste 2` e `caixa leste 2` foram para o outro lado: colados na borda do fosso, fechavam a passagem dos monstros.
+Os móveis são todos da pasta `assets/Demo` (a mesma dos computadores da Sala de Comando), sem script:
+
+| Peça | Nó em `Props` | Arquivo | Onde |
+|---|---|---|---|
+| Console de laboratório | `deco console do laboratorio` | `Furniture (106).png` | parede do fundo |
+| Estante de poções | `deco estante de pocoes lab` | `Furniture (514).png` | parede do fundo |
+| Mesa com braço robótico | `deco mesa do braco robotico` | `Furniture (892).png` | parede do fundo |
+| Maca médica | `deco maca do laboratorio` | `Furniture (658).png` | em cima da plataforma |
+| Tanque de criação | `deco tanque de criacao` | `Furniture (1038).png` | em cima da plataforma |
+| Carregador elétrico | `deco carregador eletrico` | `Furniture (640).png` | em cima da plataforma |
+
+- **Plataforma elevada no meio da sala** (o quadrado de chão claro, células 23 a 30 por 13 a 16), igual à do salão leste: 3 fileiras de tampo e 1 de tijolos na frente, com os tiles 0 a 2 x 5 a 8 de `assets/tile/PNG/walls_floor.png` na camada `Map/sombra`.
+  - A colisão é o nó `Props/plataforma do laboratorio` (126×58, a plataforma inteira): ninguém sobe nela; a luta é nos corredores em volta (16 px dos lados e na frente, mais largo no fundo).
+  - Para mover a plataforma, mova os tiles, a colisão e os três móveis de cima juntos.
+- O Frankie começa no corredor da frente, à direita da plataforma.
+- A luz da sala é fria e **pisca** (`cor_da_luz` e `piscar` = 0,3 na `SalaSudeste`), como se a energia do laboratório oscilasse.
+- Antes disso a sala foi um fosso e depois uma cisterna; o que sobrou disso é o `mundo/portas/grade_escada.gd` (grade de escada que tranca como porta de arena ou com chave), que ficou sem uso.
 
 ## Monstros (`inimigos/`)
 
@@ -221,7 +236,8 @@ A Sala Sudeste não tem mais paredes em volta nem porta: virou um fosso (11×6 t
 | `bruxa.tscn` | Bruxa | 12 / 1 | mantém distância e lança feitiços verdes | 3 pós mágicos |
 | `olho_vermelho.tscn` | Olho maligno vermelho | 3 / 1 | fixo na parede, atira e fecha quando o Pai chega perto. **Fora de uso**: saiu da Sala Nordeste | pó mágico |
 | `olho_azul.tscn` | Olho maligno azul | 4 / 1 | voa e chicoteia com a cauda | teia |
-| `chama_sombria.tscn` | Chama sombria | 5 / 1 | mantém distância e atira bolas de fogo | pó mágico, sucata |
+| `frankie.tscn` (com `inimigo.gd` na instância) | Frankie | 22 / 2 | mini-chefe do laboratório: lento, bate de perto; abaixo da metade da vida fica furioso (1,7x mais rápido) | fragmento sombrio |
+| `chama_sombria.tscn` | Chama sombria | 18 / 2 | mantém distância e atira bolas de fogo. **Fora de uso**: o Frankie ficou no lugar dela na Sala Sudeste | fragmento sombrio |
 
 | Sala | Monstros |
 |---|---|
@@ -230,7 +246,7 @@ A Sala Sudeste não tem mais paredes em volta nem porta: virou um fosso (11×6 t
 | Sala 1 | nenhum. O bilhete `Props/bilhete curativo` ensina a receita de curativo |
 | Sala Sul (tumba) | 3 esqueletos que só **aparecem** quando o baú abre. As portas pedem a chave do fosso |
 | Sala Nordeste | a **Bruxa**, na sala de bruxaria. A porta abre só com a chave |
-| Sala Sudeste | **Chama Sombria**, mini-chefe da arena, dentro de um fosso. Vencer libera a escada |
+| Sala Sudeste | **Frankie**, mini-chefe da arena, no laboratório. Vencer libera a escada |
 
 ## Projéteis (`jogo/projetil.gd`)
 
@@ -247,7 +263,7 @@ A Area2D do projétil só percebe o que se move (o Pai e os monstros). Para que 
 | 5 | Sala Sul | As duas portas (`porta sala sul oeste` e `leste`) têm `flag_necessaria = "chave_tumba"`: sem a chave do fosso, mostram "Trancada. A chave deve estar em algum lugar perigoso.". |
 | 6 | Sala Sul | O baú `Props/bau tumba` (`mundo/bau/bau.gd`, E: abrir) dá as flags `tumba_aberta` e `chave_nordeste` e mostra "Você encontrou uma chave enferrujada.". Só então os 3 esqueletos **aparecem** (`flag_aparecer` no `inimigo.gd`: até lá ficam invisíveis, sem colisão e sem levar golpe) e acordam. `tumba_aberta` também ativa a arena (`flag_para_ativar` no `sala.gd`). |
 | 7 | Sala Nordeste | A porta (`flag_necessaria = "chave_nordeste"` no `porta.gd`) mostra "Trancada. Precisa de uma chave." até o Pai ter a chave. Trancada, ela não acende a sala. |
-| 8 | Sala Sudeste | Arena com `flag_ao_vencer = "escada_liberada"`: matar a Chama Sombria libera a escada. Sem monstros, ela contaria como vencida quando o Pai entrasse. |
+| 8 | Sala Sudeste | Arena com `flag_ao_vencer = "escada_liberada"`: matar o Frankie libera a escada. Sem monstros, ela contaria como vencida quando o Pai entrasse. |
 | 9 | Escada | `flag_necessaria = "escada_liberada"` no `escada.gd`. Antes disso aparece "Algo sombrio bloqueia a passagem.". |
 
 - Alavanca, baú e arena vencida **salvam na hora** (`Jogo.salvar_progresso()`).
@@ -257,7 +273,7 @@ A Area2D do projétil só percebe o que se move (o Pai e os monstros). Para que 
 
 Os olhos azuis têm cena pronta e vão para o 2º andar.
 
-### Bruxa (Nordeste) e Chama Sombria (Sudeste)
+### Bruxa (Nordeste) e Frankie (Sudeste)
 
 Tudo fica no `inimigo.gd` e os números ficam em `Itens.INIMIGOS`, para ajustar.
 
@@ -267,11 +283,15 @@ Tudo fica no `inimigo.gd` e os números ficam em `Itens.INIMIGOS`, para ajustar.
   - Pés em (172, -48), ao lado do caldeirão.
   - Animações: a folha tem as 4 direções, mas o `inimigo.gd` só espelha para os lados. Por isso a cena usa as linhas viradas para a direita (parada 3, andando 7, ataque 15) e a morte (linha 16). Não tem animação de dano: ela só pisca vermelho. Na linha 17 da folha ainda sobram efeitos (chama azul, clarão e anéis) para usar depois.
 - **Olho maligno vermelho** (`fixo`, fora de uso desde que a bruxa entrou): não anda. Atira um projétil lento e **fecha** por `tempo_fechado` (2,5 s) quando o Pai chega a `distancia_fechar` (28 px). Fechado, fica invulnerável. A cena continua pronta para outra sala.
-- **Chama Sombria** (mini-chefe): vida 18, `escala` 1,5. Mantém distância e atira.
+- **Frankie** (mini-chefe do laboratório): a cena `inimigos/frankie.tscn` (a mesma das criaturas do Laboratório do 2º andar) com o `inimigo.gd` e `tipo = "Frankie"` na instância `Entities/frankie SalaSudeste`. Vida 22, dano 2, `escala` 1,5.
+  - Lento (26), bate de perto (`alcance` 18) a cada 1,3 s.
+  - Abaixo de `furia_vida` (50%): fica 1,7x mais rápido e bate mais vezes. Não deixa rastro (sem `rastro_dano` na tabela, a fúria só acelera).
+  - Drop: fragmento sombrio. A morte dele vence a arena e dá `escada_liberada`.
+  - A cena ganhou as animações `hurt` (linha 4 da folha) e `death` (linha 5: ele pega fogo, vira esqueleto e cinzas), e o ataque ficou mais rápido (8 quadros/s). Isso vale também para as 2 criaturas do 2º andar, que usam a mesma cena.
+- **Chama Sombria** (fora de uso desde que o Frankie entrou; a cena continua pronta): vida 18, `escala` 1,5. Mantém distância e atira.
   - O projétil que acerta **apaga a luz do Pai** por `apagar_luz` (3 s), com `pai.apagar_luz()`. As luzes da sala continuam.
   - Abaixo de `furia_vida` (50%): fica 1,6x mais rápida, atira mais e deixa um **rastro de fogo** (`RastroFogo`, no fim do `inimigo.gd`). O rastro é a própria chama sombria em miniatura, que dá `rastro_dano` a quem pisar e some em `rastro_duracao` (3 s).
   - Drop: fragmento sombrio.
-  - Pés em (432, 232), no centro do Sudeste. A morte dela vence a arena e dá `escada_liberada`.
 
 Arte: **Evil Eye | Pixel Monsters Vol. 13** de elesrech (`assets/EvilEye_Pixel_Monsters_Vol_13_COLOR_OUTLINES/`, cores red e blue) e **32x32 Micro Pixel Art - Elemental Monsters Pack** (`assets/32x32_Pixel_Art_Monsters_Pack/`, `03_Shadow_Flame`). As duas licenças permitem uso comercial e pedem crédito opcional. O pacote do Evil Eye também tem as cores green e purple, prontas para virar variações.
 

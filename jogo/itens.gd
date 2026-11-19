@@ -90,6 +90,8 @@ const INIMIGOS := {
 	"Bruxa": {"vida": 12, "dano": 1, "velocidade": 30.0, "alcance": 120.0, "distancia": 64.0, "recarga": 1.6, "projetil": true, "velocidade_projetil": 75.0, "cor_projetil": Color(0.55, 1.0, 0.35), "drops": [["po_magico", 3, 3, 1.0]]},
 	# mini-chefe da arena Sudeste
 	"Chama sombria": {"vida": 18, "dano": 2, "velocidade": 28.0, "alcance": 110.0, "distancia": 60.0, "recarga": 1.8, "projetil": true, "velocidade_projetil": 90.0, "escala": 1.5, "apagar_luz": 3.0, "furia_vida": 0.5, "furia_velocidade": 1.6, "furia_recarga": 0.75, "rastro_intervalo": 0.3, "rastro_duracao": 3.0, "rastro_dano": 1, "drops": [["fragmento", 1, 1, 1.0]]},
+	# mini-chefe do laboratório da Sala Sudeste (substituiu a Chama sombria): bate de perto; abaixo da metade fica furioso (sem rastro de fogo)
+	"Frankie": {"vida": 22, "dano": 2, "velocidade": 26.0, "alcance": 18.0, "recarga": 1.3, "escala": 1.5, "furia_vida": 0.5, "furia_velocidade": 1.7, "furia_recarga": 0.7, "drops": [["fragmento", 1, 1, 1.0]]},
 	"Fantasma": {"vida": 4, "dano": 1, "velocidade": 35.0, "alcance": 14.0, "recarga": 1.0, "drops": [["ectoplasma", 1, 1, 1.0]]},
 	"Criatura mágica": {"vida": 5, "dano": 1, "velocidade": 35.0, "alcance": 110.0, "distancia": 70.0, "recarga": 1.8, "projetil": true, "drops": [["po_magico", 1, 1, 1.0]], "receita": "tocha"},
 	"Demônio": {"vida": 10, "dano": 2, "velocidade": 45.0, "alcance": 18.0, "recarga": 1.1, "drops": [["fragmento", 1, 1, 0.7], ["osso", 1, 1, 0.4]]},

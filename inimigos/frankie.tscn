@@ -54,6 +54,34 @@ region = Rect2(64, 32, 32, 32)
 atlas = ExtResource("1_pgap2")
 region = Rect2(96, 32, 32, 32)
 
+[sub_resource type="AtlasTexture" id="AtlasTexture_dano0"]
+atlas = ExtResource("1_pgap2")
+region = Rect2(0, 96, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_morte0"]
+atlas = ExtResource("1_pgap2")
+region = Rect2(0, 128, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_morte1"]
+atlas = ExtResource("1_pgap2")
+region = Rect2(32, 128, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_morte2"]
+atlas = ExtResource("1_pgap2")
+region = Rect2(64, 128, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_morte3"]
+atlas = ExtResource("1_pgap2")
+region = Rect2(96, 128, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_morte4"]
+atlas = ExtResource("1_pgap2")
+region = Rect2(128, 128, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_morte5"]
+atlas = ExtResource("1_pgap2")
+region = Rect2(160, 128, 32, 32)
+
 [sub_resource type="SpriteFrames" id="SpriteFrames_0duit"]
 animations = [{
 "frames": [{
@@ -74,7 +102,7 @@ animations = [{
 }],
 "loop": 1,
 "name": &"attack",
-"speed": 5.0
+"speed": 8.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -109,6 +137,37 @@ animations = [{
 "loop": 1,
 "name": &"walk",
 "speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_dano0")
+}],
+"loop": false,
+"name": &"hurt",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_morte0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_morte1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_morte2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_morte3")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_morte4")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_morte5")
+}],
+"loop": false,
+"name": &"death",
+"speed": 8.0
 }]
 
 [node name="frankie" type="CharacterBody2D" unique_id=346530683]

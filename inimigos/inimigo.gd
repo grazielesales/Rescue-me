@@ -523,8 +523,8 @@ func _tick_furia(delta: float) -> void:
 		_piscar(Color(0.8, 0.4, 1.0))
 		if _sprite:
 			_sprite.self_modulate = Color(1.15, 0.85, 1.25)
-	if not _furia:
-		return
+	if not _furia or _dados.get("rastro_dano", 0) <= 0:
+		return  # sem rastro_dano na tabela: a fúria só acelera (ex.: redemoinho)
 	_rastro_t -= delta
 	if _rastro_t <= 0.0:
 		_rastro_t = _dados.get("rastro_intervalo", 0.3)
