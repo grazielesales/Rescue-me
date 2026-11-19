@@ -1,0 +1,170 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://inimigos/inimigo.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://dwxcqskodf4b2" path="res://bruxa/Wizard sheet.png" id="2_folha"]
+
+[sub_resource type="AtlasTexture" id="q1"]
+atlas = ExtResource("2_folha")
+region = Rect2(0, 144, 48, 48)
+
+[sub_resource type="AtlasTexture" id="q2"]
+atlas = ExtResource("2_folha")
+region = Rect2(48, 144, 48, 48)
+
+[sub_resource type="AtlasTexture" id="q3"]
+atlas = ExtResource("2_folha")
+region = Rect2(96, 144, 48, 48)
+
+[sub_resource type="AtlasTexture" id="q4"]
+atlas = ExtResource("2_folha")
+region = Rect2(144, 144, 48, 48)
+
+[sub_resource type="AtlasTexture" id="q5"]
+atlas = ExtResource("2_folha")
+region = Rect2(0, 336, 48, 48)
+
+[sub_resource type="AtlasTexture" id="q6"]
+atlas = ExtResource("2_folha")
+region = Rect2(48, 336, 48, 48)
+
+[sub_resource type="AtlasTexture" id="q7"]
+atlas = ExtResource("2_folha")
+region = Rect2(96, 336, 48, 48)
+
+[sub_resource type="AtlasTexture" id="q8"]
+atlas = ExtResource("2_folha")
+region = Rect2(144, 336, 48, 48)
+
+[sub_resource type="AtlasTexture" id="q9"]
+atlas = ExtResource("2_folha")
+region = Rect2(0, 720, 48, 48)
+
+[sub_resource type="AtlasTexture" id="q10"]
+atlas = ExtResource("2_folha")
+region = Rect2(48, 720, 48, 48)
+
+[sub_resource type="AtlasTexture" id="q11"]
+atlas = ExtResource("2_folha")
+region = Rect2(96, 720, 48, 48)
+
+[sub_resource type="AtlasTexture" id="q12"]
+atlas = ExtResource("2_folha")
+region = Rect2(144, 720, 48, 48)
+
+[sub_resource type="AtlasTexture" id="q13"]
+atlas = ExtResource("2_folha")
+region = Rect2(0, 768, 48, 48)
+
+[sub_resource type="AtlasTexture" id="q14"]
+atlas = ExtResource("2_folha")
+region = Rect2(48, 768, 48, 48)
+
+[sub_resource type="AtlasTexture" id="q15"]
+atlas = ExtResource("2_folha")
+region = Rect2(96, 768, 48, 48)
+
+[sub_resource type="AtlasTexture" id="q16"]
+atlas = ExtResource("2_folha")
+region = Rect2(144, 768, 48, 48)
+
+[sub_resource type="SpriteFrames" id="frames"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("q1")
+}, {
+"duration": 1.0,
+"texture": SubResource("q2")
+}, {
+"duration": 1.0,
+"texture": SubResource("q3")
+}, {
+"duration": 1.0,
+"texture": SubResource("q4")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 6.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("q5")
+}, {
+"duration": 1.0,
+"texture": SubResource("q6")
+}, {
+"duration": 1.0,
+"texture": SubResource("q7")
+}, {
+"duration": 1.0,
+"texture": SubResource("q8")
+}],
+"loop": true,
+"name": &"walk",
+"speed": 8.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("q9")
+}, {
+"duration": 1.0,
+"texture": SubResource("q10")
+}, {
+"duration": 1.0,
+"texture": SubResource("q11")
+}, {
+"duration": 1.0,
+"texture": SubResource("q12")
+}],
+"loop": false,
+"name": &"attack",
+"speed": 10.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("q13")
+}, {
+"duration": 1.0,
+"texture": SubResource("q14")
+}, {
+"duration": 1.0,
+"texture": SubResource("q15")
+}, {
+"duration": 1.0,
+"texture": SubResource("q16")
+}],
+"loop": false,
+"name": &"death",
+"speed": 6.0
+}]
+
+[sub_resource type="Gradient" id="G"]
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0)
+
+[sub_resource type="GradientTexture2D" id="GT"]
+gradient = SubResource("G")
+width = 64
+height = 64
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(1, 0.5)
+
+[node name="bruxa" type="CharacterBody2D"]
+script = ExtResource("1_script")
+editor_description = "Bruxa (Wizard sheet de GandalfHardcore, pasta bruxa/). Mantém distância e lança feitiços verdes; solta pó mágico. Usa as linhas da folha viradas para a direita (parada 3, andando 7, ataque 15) e a morte (linha 16); o inimigo.gd espelha para a esquerda."
+tipo = "Bruxa"
+altura_pes = 8.0
+largura_corpo = 10.0
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+sprite_frames = SubResource("frames")
+animation = &"idle"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+
+[node name="Brilho" type="PointLight2D" parent="."]
+position = Vector2(0, -6)
+color = Color(0.55, 1, 0.45, 1)
+energy = 0.45
+texture = SubResource("GT")
+texture_scale = 0.9

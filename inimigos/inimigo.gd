@@ -66,6 +66,9 @@ const LARGURA_MAX_COLISAO := 8.0  # um pouco menor que a do Pai (10)
 ## Flag do Jogo que acorda o monstro (ex.: "tumba_aberta"). Vazio = só um
 ## golpe acorda.
 @export var flag_acordar := ""
+## Flag do Jogo que faz o monstro aparecer (ex.: "tumba_aberta"). Até lá ele
+## fica invisível, sem colisão, sem levar golpe e parado. Vazio = já começa à vista.
+@export var flag_aparecer := ""
 
 @export_group("Vagar")
 ## Anda sozinho pela própria sala (ou em volta de onde nasceu, fora de salas)
@@ -128,6 +131,9 @@ var _tempo_andando := 0.0
 
 var _t := randf() * TAU
 var _base_y := 0.0
+## Escondido até a flag_aparecer existir (camada de colisão guardada aqui).
+var _escondido := false
+var _camada := 0
 @onready var _sprite: AnimatedSprite2D = get_node_or_null("AnimatedSprite2D")
 
 
@@ -155,6 +161,8 @@ func _ready() -> void:
 	scale *= float(_dados.get("escala", 1.0))
 	_achar_sala.call_deferred()
 	_preparar_navegacao.call_deferred()
+	if flag_aparecer != "" and not Jogo.get_flag(flag_aparecer, false):
+		_esconder()
 
 	if _sprite == null:
 		return
@@ -202,6 +210,27 @@ func acordar() -> void:
 	dormindo = false
 	if _sprite and _sprite.sprite_frames:
 		_sprite.play(_anim_base)
+
+
+## Some até a flag_aparecer: invisível, sem colisão para o Pai e fora do
+## grupo "atingiveis" (continua em "inimigos", para a arena contar com ele).
+func _esconder() -> void:
+	_escondido = true
+	visible = false
+	_camada = collision_layer
+	collision_layer = 0
+	remove_from_group("atingiveis")
+
+
+## Aparece aos poucos e já acorda.
+func _aparecer() -> void:
+	_escondido = false
+	visible = true
+	collision_layer = _camada
+	add_to_group("atingiveis")
+	modulate.a = 0.0
+	create_tween().tween_property(self, "modulate:a", 1.0, 0.6)
+	acordar()
 
 
 func _achar_sala() -> void:
@@ -266,6 +295,10 @@ func _process(delta: float) -> void:
 
 func _physics_process(delta: float) -> void:
 	if morto:
+		return
+	if _escondido:
+		if Jogo.get_flag(flag_aparecer, false):
+			_aparecer()
 		return
 	_recarga = maxf(0.0, _recarga - delta)
 	_travado_t = maxf(0.0, _travado_t - delta)

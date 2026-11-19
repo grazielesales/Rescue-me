@@ -7,9 +7,9 @@ Testado no Godot 4.7.1. Comece pelo `andares/andar1.tscn` (1º andar). A escada 
 | Pasta | O que tem |
 |---|---|
 | `andares/` | As cenas dos andares (`andar1.tscn`, `andar2.tscn`) e o script da raiz de cada andar (`andar.gd`). |
-| `mundo/` | Peças do cenário com comportamento: `agua/` (TileSet animado da piscina), `alavanca/`, `armadilha/` (espinhos), `escada/`, `fosso/` (TileSet do fosso de espinhos), `narrativa/` (bilhetes), `portas/` e `salas/`. |
+| `mundo/` | Peças do cenário com comportamento: `agua/` (TileSet animado da piscina), `alavanca/`, `armadilha/` (espinhos), `bruxaria/` (caldeirão e círculo mágico da sala da bruxa), `escada/`, `fosso/` (TileSet do fosso de espinhos), `narrativa/` (bilhetes), `portas/` e `salas/`. |
 | `personagens/pai/` | O Pai: cena, script e câmera. |
-| `inimigos/` | Cenas dos monstros (`aranha`, `zumbi`, `esqueleto`, `demonio`, `feiticeiro_espectral`, `frankie`) e o script `inimigo.gd`. |
+| `inimigos/` | Cenas dos monstros (`aranha`, `bruxa`, `zumbi`, `esqueleto`, `demonio`, `feiticeiro_espectral`, `frankie`) e o script `inimigo.gd`. |
 | `jogo/` | Sistemas globais: autoload `Jogo`, HUD, livro, inventário, tabelas de itens, coletáveis, caixas quebráveis e projéteis. |
 | `assets/` | Arte de terceiros. Cada pacote fica inteiro na sua pasta, como veio. |
 | `assets/_originais/` | Arquivos que vieram com os pacotes e o jogo não usa (`.unitypackage`, changelog, prévia). |
@@ -101,7 +101,7 @@ O contorno do prédio é o mesmo do 1º andar, mas o miolo foi redesenhado:
 - Objetos recortados do `assets/tile/Tiled_files/Objects.png` (o mesmo pacote das paredes), como `Sprite2D` em `Props` com `region_rect`. A origem fica na base do objeto, para o y-sort.
 - Os grandes têm um filho `Colisao` (StaticBody2D) na base; montes de ouro, vasinhos e os escudos na parede não têm.
 - **Nome começando com "caixa" ou "barril" = quebrável** (`jogo/quebravel.gd`, solta madeira e às vezes sucata). Os enfeites que não devem quebrar começam com "deco".
-- Onde está: Sala de Comando (2 caixas e 1 barril quebráveis: a primeira madeira), Nordeste (depósito de caixas e barris), Sul (tumba com baú aberto, ouro, vasos e escudos), Sudeste (baú fechado, vasos, caixa e barril), Sala da Aranha (caixas e vasos).
+- Onde está: Sala de Comando (2 caixas e 1 barril quebráveis: a primeira madeira), Nordeste (sala de bruxaria, ver abaixo; sobraram 1 barril e 1 caixa quebráveis), Sul (tumba com baú aberto, ouro, vasos e escudos), Sudeste (baú fechado, vasos, caixa e barril), Sala da Aranha (caixas e vasos).
 - Cuidado ao mover objetos com colisão para muito perto de cantos de parede: a malha de navegação dos monstros é montada ao abrir o andar, e um obstáculo quase encostado num canto pode desligar uma sala da outra. Depois de mudar a decoração, confira se os monstros ainda chegam até o Pai.
 
 ## Planta dos salões: sombra, plataformas, braseiros e espinhos
@@ -160,10 +160,37 @@ Cópia do fosso do mapa de exemplo do pacote (`Dungeon1.tmx`): um buraco com bor
 | Bordas, parede do fundo e escada | camada `Map/fosso` (TileSet `mundo/fosso/fosso.tres`: paredes e chão de `Tiled_files/walls_floor.png` e as duas folhas de rachaduras) |
 | Colisão | `Colisoes/fosso`: as 3 bordas (finas, só a linha clara) e a parede do fundo dos dois lados da escada. **Só dá para entrar pela escada.** |
 | Espinhos | `Props/armadilha bolsao oeste`, agora com 3×2, logo no pé da escada |
-| Chave e ouro | `Props/deco chave fosso`, `deco ouro fosso 1` e `deco ouro fosso 2`. São só enfeite: o Pai não pega. |
+| Chave e ouro | `Props/chave da tumba` é a chave de verdade: o Pai pega passando por cima e ela abre as portas da Sala Sul (ver a progressão). `deco ouro fosso 1` e `2` são só enfeite. |
 
 - O barril, a caixa e o ouro que já estavam no bolsão ficaram onde estavam, na faixa à esquerda do fosso. Dá para chegar lá pelo beiral entre a parede e o fosso.
 - **Para mover o fosso,** mova junto: os tiles das duas camadas, o nó `Colisoes/fosso`, a armadilha e os três enfeites.
+
+## Sala de bruxaria (Sala Nordeste, 1º andar)
+
+A antiga sala dos olhos virou o covil da **bruxa**: o depósito de caixas e os 3 olhos da parede saíram. Os móveis são recortes do Medieval Free Pack, os mesmos do laboratório do 2º andar.
+
+| Peça | Nó em `Props` | Detalhe |
+|---|---|---|
+| Caldeirão borbulhando | `caldeirao nordeste` | `mundo/bruxaria/caldeirao.gd` desenha a poção verde, as bolhas e o vapor por cima do caldeirão. Tem colisão e uma luz verde que oscila (`Luz`). |
+| Círculo mágico | `circulo magico nordeste` | `mundo/bruxaria/circulo_magico.gd`: duas elipses, pentagrama, runas e 5 velas, tudo em pixel art. As linhas pulsam, as chamas tremem e ele brilha no escuro (Unshaded). Fica na frente da porta, sem colisão, com uma luz roxa (`Luz`). No Inspector: `raio`, `achatamento`, `cor`, `velas`. |
+| Estantes | `deco estante de pocoes`, `deco estante de frascos` | na parede do fundo, com colisão |
+| Mesa de feitiços | `deco mesa de feiticos` | escrivaninha com livro aberto, na parede do fundo |
+| Mesa de velas | `deco mesa de velas nordeste` | velas, caveiras e ervas, com luz quente |
+| Chão | `deco caveira nordeste`, `deco caveira do circulo`, `deco pocao nordeste`, `deco pergaminho nordeste`, `deco livro de feiticos` | enfeites em `z_index` -1, sem colisão |
+
+- Os dois scripts têm `@tool`: o caldeirão e o círculo aparecem animados também no editor.
+- O barril e a caixa quebráveis do canto direito continuaram (a madeira do 1º andar não mudou muito).
+- Depois de mexer nos móveis, confira se a bruxa ainda alcança o Pai: o círculo é a entrada da sala.
+
+## Fosso da Sala Sudeste (arena da Chama Sombria)
+
+A Sala Sudeste não tem mais paredes em volta nem porta: virou um fosso (11×6 tiles, células 21 a 31 por 11 a 17) do mesmo jeito do fosso do bolsão oeste, nas mesmas camadas (`Map/fosso_fundo` e `Map/fosso`). Saiu a parede fina da esquerda e a porta lateral; as paredes do norte, do leste e do sul ficaram, porque são a borda do mapa.
+
+- **Entrada:** do corredor da esquerda, pelo beiral encostado na parede do norte, até a escada no canto de cima à esquerda. A colisão das bordas e da parede do fundo é `Colisoes/fosso sudeste`.
+- **Grade da escada** (`Props/grade da escada sudeste`, `mundo/portas/grade_escada.gd`): faz o papel da porta da arena. Começa aberta; quando o Pai desce e a arena tranca, a grade baixa e ele fica preso com a Chama Sombria; vencendo, ela sobe de novo. Ela está em `portas` da `SalaSudeste`. Também serve para trancar uma escada com chave (`flag_necessaria`).
+- `areas` da sala = só o fundo do fosso: a arena e a Chama Sombria só reagem quando o Pai desce a escada.
+- O baú, os vasos, o ouro, a caixa e o barril da sala foram para dentro do fosso; a Chama Sombria está no meio dele.
+- No corredor ao lado, `barril leste 2` e `caixa leste 2` foram para o outro lado: colados na borda do fosso, fechavam a passagem dos monstros.
 
 ## Monstros (`inimigos/`)
 
@@ -191,8 +218,9 @@ Cópia do fosso do mapa de exemplo do pacote (`Dungeon1.tmx`): um buraco com bor
 
 | Cena | Tipo | Vida / dano | Como luta | Solta |
 |---|---|---|---|---|
-| `olho_vermelho.tscn` | Olho maligno vermelho | 3 / 2 | voa e chicoteia com a cauda; rápido | osso |
-| `olho_azul.tscn` | Olho maligno azul | 4 / 1 | igual, mais lento e resistente | teia |
+| `bruxa.tscn` | Bruxa | 12 / 1 | mantém distância e lança feitiços verdes | 3 pós mágicos |
+| `olho_vermelho.tscn` | Olho maligno vermelho | 3 / 1 | fixo na parede, atira e fecha quando o Pai chega perto. **Fora de uso**: saiu da Sala Nordeste | pó mágico |
+| `olho_azul.tscn` | Olho maligno azul | 4 / 1 | voa e chicoteia com a cauda | teia |
 | `chama_sombria.tscn` | Chama sombria | 5 / 1 | mantém distância e atira bolas de fogo | pó mágico, sucata |
 
 | Sala | Monstros |
@@ -200,9 +228,9 @@ Cópia do fosso do mapa de exemplo do pacote (`Dungeon1.tmx`): um buraco com bor
 | Sala de Comando | nenhum: **o Pai começa aqui**, em frente ao console. Os monitores (`Props/centro-controle`, E: olhar) mostram o filho e têm um brilho azul que oscila de leve (`BrilhoMonitores`, `mundo/salas/luz_oscilante.gd`) |
 | Sala da Aranha (alavanca) | 3 mini aranhas (aranha pequena em escala 0,6) |
 | Sala 1 | nenhum. O bilhete `Props/bilhete curativo` ensina a receita de curativo |
-| Sala Sul (tumba) | 3 esqueletos **dormindo** até o baú abrir |
-| Sala Nordeste | 3 olhos malignos vermelhos **fixos na parede**. A porta abre só com a chave |
-| Sala Sudeste | **Chama Sombria**, mini-chefe da arena. Vencer libera a escada |
+| Sala Sul (tumba) | 3 esqueletos que só **aparecem** quando o baú abre. As portas pedem a chave do fosso |
+| Sala Nordeste | a **Bruxa**, na sala de bruxaria. A porta abre só com a chave |
+| Sala Sudeste | **Chama Sombria**, mini-chefe da arena, dentro de um fosso. Vencer libera a escada |
 
 ## Projéteis (`jogo/projetil.gd`)
 
@@ -215,28 +243,30 @@ A Area2D do projétil só percebe o que se move (o Pai e os monstros). Para que 
 | 1 | Sala de Comando | O Pai começa **sem arma**, com socos (dano 1, alcance curto). Os socos quebram caixas e barris, que dão madeira. O **Porrete de madeira** (dano 3, 3 madeiras) já vem no livro. |
 | 2 | Sala 1 | O bilhete ensina o **curativo** (deixou de ser receita inicial). |
 | 3 | Sala da Aranha | A alavanca do corredor levanta o portão (flag `portao_aranha_aberto`). |
-| 4 | Sala Sul | O baú `Props/bau tumba` (`mundo/bau/bau.gd`, E: abrir) dá as flags `tumba_aberta` e `chave_nordeste` e mostra "Você encontrou uma chave enferrujada.". `tumba_aberta` acorda os esqueletos (`dormindo` e `flag_acordar` no `inimigo.gd`) e ativa a arena (`flag_para_ativar` no `sala.gd`). |
-| 5 | Sala Nordeste | A porta (`flag_necessaria = "chave_nordeste"` no `porta.gd`) mostra "Trancada. Precisa de uma chave." até o Pai ter a chave. Trancada, ela não acende a sala. |
-| 6 | Sala Sudeste | Arena com `flag_ao_vencer = "escada_liberada"`: matar a Chama Sombria libera a escada. Sem monstros, ela contaria como vencida quando o Pai entrasse. |
-| 7 | Escada | `flag_necessaria = "escada_liberada"` no `escada.gd`. Antes disso aparece "Algo sombrio bloqueia a passagem.". |
+| 4 | Fosso do bolsão oeste | A chave no fundo do fosso (`Props/chave da tumba`, `mundo/bau/chave_no_chao.gd`) é pega passando por cima, depois dos espinhos. Dá a flag `chave_tumba` e salva na hora. |
+| 5 | Sala Sul | As duas portas (`porta sala sul oeste` e `leste`) têm `flag_necessaria = "chave_tumba"`: sem a chave do fosso, mostram "Trancada. A chave deve estar em algum lugar perigoso.". |
+| 6 | Sala Sul | O baú `Props/bau tumba` (`mundo/bau/bau.gd`, E: abrir) dá as flags `tumba_aberta` e `chave_nordeste` e mostra "Você encontrou uma chave enferrujada.". Só então os 3 esqueletos **aparecem** (`flag_aparecer` no `inimigo.gd`: até lá ficam invisíveis, sem colisão e sem levar golpe) e acordam. `tumba_aberta` também ativa a arena (`flag_para_ativar` no `sala.gd`). |
+| 7 | Sala Nordeste | A porta (`flag_necessaria = "chave_nordeste"` no `porta.gd`) mostra "Trancada. Precisa de uma chave." até o Pai ter a chave. Trancada, ela não acende a sala. |
+| 8 | Sala Sudeste | Arena com `flag_ao_vencer = "escada_liberada"`: matar a Chama Sombria libera a escada. Sem monstros, ela contaria como vencida quando o Pai entrasse. |
+| 9 | Escada | `flag_necessaria = "escada_liberada"` no `escada.gd`. Antes disso aparece "Algo sombrio bloqueia a passagem.". |
 
 - Alavanca, baú e arena vencida **salvam na hora** (`Jogo.salvar_progresso()`).
-- Um monstro dormindo também acorda se levar um golpe.
+- Um monstro dormindo também acorda se levar um golpe. Um monstro com `flag_aparecer` não pode levar golpe antes de aparecer.
 - Os exports novos servem para qualquer sala, porta, escada ou monstro: basta preencher o nome da flag no Inspetor.
 - **Arte:** o porrete é `assets/staffs/7.png` (32 px, encolhido para o tamanho dos outros ícones). O baú (fechado e aberto) e a chave são recortes de `assets/tile/Tiled_files/Objects.png`.
 
 Os olhos azuis têm cena pronta e vão para o 2º andar.
 
-### Olhos malignos (Nordeste) e Chama Sombria (Sudeste)
+### Bruxa (Nordeste) e Chama Sombria (Sudeste)
 
 Tudo fica no `inimigo.gd` e os números ficam em `Itens.INIMIGOS`, para ajustar.
 
-- **Olho maligno vermelho** (`fixo`): não anda. Atira um projétil lento (`velocidade_projetil` 45) quando vê o Pai na sala acesa.
-  - Se o Pai chega a `distancia_fechar` (28 px), o olho **fecha** por `tempo_fechado` (2,5 s): fica invulnerável (o golpe só faz um "tink" cinza) e não atira.
-  - Depois abre e fica pelo menos `tempo_aberto` (1,5 s) vulnerável. É a hora de bater.
-  - A animação `closed` usa o quadro `death_hit_00` (olho de pálpebra fechada).
-  - Drop: pó mágico.
-  - Pés em (104, -78), (160, -78) e (210, -78), na parede do fundo.
+- **Bruxa** (`inimigos/bruxa.tscn`): vida 12, dano 1. Fica a `distancia` (64 px) do Pai e lança um feitiço verde (`cor_projetil`, `velocidade_projetil` 75) a cada `recarga` (1,6 s) quando vê o Pai na sala acesa.
+  - Antes de o Pai entrar, ela anda pela sala entre o caldeirão e as estantes.
+  - Drop: **3 pós mágicos**, o mesmo que os 3 olhos que ela substituiu soltavam somados (o pó mágico é usado na Luz reforçada e na Lâmina de luz).
+  - Pés em (172, -48), ao lado do caldeirão.
+  - Animações: a folha tem as 4 direções, mas o `inimigo.gd` só espelha para os lados. Por isso a cena usa as linhas viradas para a direita (parada 3, andando 7, ataque 15) e a morte (linha 16). Não tem animação de dano: ela só pisca vermelho. Na linha 17 da folha ainda sobram efeitos (chama azul, clarão e anéis) para usar depois.
+- **Olho maligno vermelho** (`fixo`, fora de uso desde que a bruxa entrou): não anda. Atira um projétil lento e **fecha** por `tempo_fechado` (2,5 s) quando o Pai chega a `distancia_fechar` (28 px). Fechado, fica invulnerável. A cena continua pronta para outra sala.
 - **Chama Sombria** (mini-chefe): vida 18, `escala` 1,5. Mantém distância e atira.
   - O projétil que acerta **apaga a luz do Pai** por `apagar_luz` (3 s), com `pai.apagar_luz()`. As luzes da sala continuam.
   - Abaixo de `furia_vida` (50%): fica 1,6x mais rápida, atira mais e deixa um **rastro de fogo** (`RastroFogo`, no fim do `inimigo.gd`). O rastro é a própria chama sombria em miniatura, que dá `rastro_dano` a quem pisar e some em `rastro_duracao` (3 s).
@@ -244,6 +274,8 @@ Tudo fica no `inimigo.gd` e os números ficam em `Itens.INIMIGOS`, para ajustar.
   - Pés em (432, 232), no centro do Sudeste. A morte dela vence a arena e dá `escada_liberada`.
 
 Arte: **Evil Eye | Pixel Monsters Vol. 13** de elesrech (`assets/EvilEye_Pixel_Monsters_Vol_13_COLOR_OUTLINES/`, cores red e blue) e **32x32 Micro Pixel Art - Elemental Monsters Pack** (`assets/32x32_Pixel_Art_Monsters_Pack/`, `03_Shadow_Flame`). As duas licenças permitem uso comercial e pedem crédito opcional. O pacote do Evil Eye também tem as cores green e purple, prontas para virar variações.
+
+A bruxa é a **Wizard sheet** de GandalfHardcore (`bruxa/Wizard sheet.png`, quadros de 48×48). A licença permite usar e modificar em jogos, inclusive comerciais, mas proíbe redistribuir os arquivos do pacote. Pela regra das pastas, a pasta `bruxa/` pode ir para `assets/bruxa/`. Mova pelo FileSystem do Godot, para a `inimigos/bruxa.tscn` acompanhar.
 
 ## Combate, salas bloqueadas e crafting
 

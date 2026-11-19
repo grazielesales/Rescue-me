@@ -86,6 +86,8 @@ const INIMIGOS := {
 	# 1º andar
 	"Olho maligno vermelho": {"vida": 3, "dano": 1, "velocidade": 0.0, "alcance": 110.0, "recarga": 2.2, "projetil": true, "velocidade_projetil": 45.0, "cor_projetil": Color(1.0, 0.35, 0.3), "fixo": true, "distancia_fechar": 28.0, "tempo_fechado": 2.5, "tempo_aberto": 1.5, "drops": [["po_magico", 1, 1, 1.0]]},
 	"Olho maligno azul": {"vida": 4, "dano": 1, "velocidade": 38.0, "alcance": 16.0, "recarga": 1.0, "drops": [["teia", 1, 1, 0.7]]},
+	# Sala Nordeste: a bruxa no lugar dos 3 olhos (solta o mesmo pó mágico que eles somados)
+	"Bruxa": {"vida": 12, "dano": 1, "velocidade": 30.0, "alcance": 120.0, "distancia": 64.0, "recarga": 1.6, "projetil": true, "velocidade_projetil": 75.0, "cor_projetil": Color(0.55, 1.0, 0.35), "drops": [["po_magico", 3, 3, 1.0]]},
 	# mini-chefe da arena Sudeste
 	"Chama sombria": {"vida": 18, "dano": 2, "velocidade": 28.0, "alcance": 110.0, "distancia": 60.0, "recarga": 1.8, "projetil": true, "velocidade_projetil": 90.0, "escala": 1.5, "apagar_luz": 3.0, "furia_vida": 0.5, "furia_velocidade": 1.6, "furia_recarga": 0.75, "rastro_intervalo": 0.3, "rastro_duracao": 3.0, "rastro_dano": 1, "drops": [["fragmento", 1, 1, 1.0]]},
 	"Fantasma": {"vida": 4, "dano": 1, "velocidade": 35.0, "alcance": 14.0, "recarga": 1.0, "drops": [["ectoplasma", 1, 1, 1.0]]},
