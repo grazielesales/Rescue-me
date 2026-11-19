@@ -7,7 +7,7 @@ Testado no Godot 4.7.1. Comece pelo `andares/andar1.tscn` (1º andar). A escada 
 | Pasta | O que tem |
 |---|---|
 | `andares/` | As cenas dos andares (`andar1.tscn`, `andar2.tscn`) e o script da raiz de cada andar (`andar.gd`). |
-| `mundo/` | Peças do cenário com comportamento: `alavanca/`, `escada/`, `narrativa/` (bilhetes), `portas/` e `salas/`. |
+| `mundo/` | Peças do cenário com comportamento: `agua/` (TileSet animado da piscina), `alavanca/`, `armadilha/` (espinhos), `escada/`, `fosso/` (TileSet do fosso de espinhos), `narrativa/` (bilhetes), `portas/` e `salas/`. |
 | `personagens/pai/` | O Pai: cena, script e câmera. |
 | `inimigos/` | Cenas dos monstros (`aranha`, `zumbi`, `esqueleto`, `demonio`, `feiticeiro_espectral`, `frankie`) e o script `inimigo.gd`. |
 | `jogo/` | Sistemas globais: autoload `Jogo`, HUD, livro, inventário, tabelas de itens, coletáveis, caixas quebráveis e projéteis. |
@@ -103,6 +103,67 @@ O contorno do prédio é o mesmo do 1º andar, mas o miolo foi redesenhado:
 - **Nome começando com "caixa" ou "barril" = quebrável** (`jogo/quebravel.gd`, solta madeira e às vezes sucata). Os enfeites que não devem quebrar começam com "deco".
 - Onde está: Sala de Comando (2 caixas e 1 barril quebráveis: a primeira madeira), Nordeste (depósito de caixas e barris), Sul (tumba com baú aberto, ouro, vasos e escudos), Sudeste (baú fechado, vasos, caixa e barril), Sala da Aranha (caixas e vasos).
 - Cuidado ao mover objetos com colisão para muito perto de cantos de parede: a malha de navegação dos monstros é montada ao abrir o andar, e um obstáculo quase encostado num canto pode desligar uma sala da outra. Depois de mudar a decoração, confira se os monstros ainda chegam até o Pai.
+
+## Planta dos salões: sombra, plataformas, braseiros e espinhos
+
+Os dois andares ganharam o visual do mapa de exemplo do pacote de tiles (`assets/tile/Tiled_files/Dungeon1.tmx`). Tudo foi **acrescentado**: nenhum nó antigo mudou.
+
+- **Sombra no piso** (`Map/sombra`, TileMapLayer entre o chão e as paredes, sem colisão):
+  - piso mais escuro junto às paredes: 2 células embaixo delas e 1 nas laterais, com bordas arredondadas;
+  - rachaduras soltas em grupos de 2×2;
+  - os tiles das plataformas elevadas.
+  - Tiles: piso escuro em `assets/tile/PNG/walls_floor.png` (colunas 0 a 4, linhas 9 a 11: bordas e cantos internos) e rachaduras em `assets/tile/Tiled_files/decorative_cracks_floor.png` (linhas 12 e 13). Para mudar, pinte nessa camada no editor.
+- **Plataformas elevadas** (3×4 tiles, com braseiro em cima): os tiles ficam em `Map/sombra` e a colisão é o nó `Props/plataforma ...`. Para mover, mova os tiles, a colisão e o `braseiro da plataforma ...` juntos.
+- **Braseiros** (`Props/braseiro ...`): `fire_animation.png` em 6 quadros, com material Unshaded (o fogo aparece no escuro) e um filho `Luz` (PointLight2D com `luz_oscilante.gd`). Os soltos têm uma colisão pequena na base. Servem de ponto de referência no escuro.
+- **Espinhos** (`mundo/armadilha/espinhos.gd`, nós `Props/armadilha ...`):
+  - a posição é o canto superior esquerdo e `tamanho` é a área em tiles (mínimo 2×2);
+  - ciclo: recolhida (`tempo_recolhida`, 1,6 s) → pontas avisando (`tempo_aviso`, 0,5 s) → erguida (`tempo_erguida`, 0,7 s) → desce;
+  - erguida, tira `dano` (1) do Pai e o empurra para fora. Monstros passam por cima sem se machucar;
+  - `atraso` desencontra armadilhas vizinhas. No editor elas aparecem com as pontas de fora e um contorno vermelho.
+- **Onde ficou cada coisa:**
+
+| Andar | Plataformas | Braseiros soltos | Espinhos | Objetos novos |
+|---|---|---|---|---|
+| 1º | salão leste (embaixo) | salão oeste, perto da escada | fosso do bolsão oeste (ver abaixo), salão leste, perto da Sala Sudeste | 11 caixas e barris quebráveis, pilhas de caixas, vasos, ouro, escudos na parede; teias, ossos e caveira na Sala da Aranha |
+| 2º | 2 no salão | salão (esquerda), perto da arena | salão (esquerda), salão (entre as plataformas), corredor entre o Ninho e o Porão (guarda caixas e barris) | 8 caixas e barris quebráveis, pilha de caixas, vasos, ouro, ossos |
+
+- **Cuidados:**
+  - o nó `Props` do 1º andar está em (-327, 150); quem posiciona algo por código precisa descontar isso;
+  - no Porão do 2º andar há tiles de piso claro, o (1, 6), pintados na camada `Map/wall`, sem colisão: são chão, não parede.
+
+## Piscina animada do 1º andar (`mundo/agua/agua.tres`)
+
+A água da piscina se mexe sozinha, como no mapa de exemplo do pacote (`Dungeon1.tmx`): 6 quadros de 0,15 s, todos os tiles no mesmo ritmo. Não tem script: são tiles animados do TileSet `mundo/agua/agua.tres`.
+
+- **Três camadas em `Map`**, nesta ordem de desenho (cada uma fica por cima da anterior):
+
+| Camada | O que tem | Fonte do `agua.tres` |
+|---|---|---|
+| `agua` | fundo parado, inclusive embaixo das margens (a linha d'água tem falhas de 1 px por onde ele aparece) | "margens e fundo", linha 30 |
+| `agua_ondas` | reflexos claros que se mexem na superfície, em 5 manchas | "ondas" (`water_details_animation.png`) |
+| `agua_margem` | bordas de pedra com a linha d'água animada | "margens e fundo" (`Water_coasts_animation.png`) |
+
+- **Para pintar mais água:**
+  - margens: use só o bloco do canto superior esquerdo da folha (colunas 0 a 13, linhas 0 a 9). O resto da folha são os outros quadros da animação, que o Godot reserva e não mostra como tiles soltos;
+  - fundo: linha 30 da mesma folha;
+  - ondas: linhas 0 a 12 da folha de ondas. Pinte a mancha inteira, sem cortar no meio: os reflexos atravessam vários tiles.
+- **Velocidade:** no painel do TileSet, selecione os tiles (dá para selecionar vários) e mude `Animation > Speed`. Com 1, cada quadro dura 0,15 s.
+- **Colisão:** continua no nó `Colisoes/piscina`, que cobre só a água. Se a piscina crescer, aumente esse retângulo junto.
+
+## Fosso de espinhos do bolsão oeste (1º andar)
+
+Cópia do fosso do mapa de exemplo do pacote (`Dungeon1.tmx`): um buraco com borda de pedra clara, a parede do fundo com rachaduras e uma escada no meio, espinhos no chão e, lá embaixo, uma chave e dois montes de ouro. Ocupa 5×6 tiles no canto de baixo à esquerda do salão oeste. A escada desce logo abaixo da entrada do bolsão.
+
+| Peça | Onde está |
+|---|---|
+| Chão escuro do fosso | camada `Map/fosso_fundo` |
+| Bordas, parede do fundo e escada | camada `Map/fosso` (TileSet `mundo/fosso/fosso.tres`: paredes e chão de `Tiled_files/walls_floor.png` e as duas folhas de rachaduras) |
+| Colisão | `Colisoes/fosso`: as 3 bordas (finas, só a linha clara) e a parede do fundo dos dois lados da escada. **Só dá para entrar pela escada.** |
+| Espinhos | `Props/armadilha bolsao oeste`, agora com 3×2, logo no pé da escada |
+| Chave e ouro | `Props/deco chave fosso`, `deco ouro fosso 1` e `deco ouro fosso 2`. São só enfeite: o Pai não pega. |
+
+- O barril, a caixa e o ouro que já estavam no bolsão ficaram onde estavam, na faixa à esquerda do fosso. Dá para chegar lá pelo beiral entre a parede e o fosso.
+- **Para mover o fosso,** mova junto: os tiles das duas camadas, o nó `Colisoes/fosso`, a armadilha e os três enfeites.
 
 ## Monstros (`inimigos/`)
 
