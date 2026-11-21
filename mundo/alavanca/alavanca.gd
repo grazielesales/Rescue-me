@@ -10,9 +10,15 @@ extends AnimatedSprite2D
 @export var mensagem := "Algo pesado se mexeu..."
 ## Flag do Jogo marcada ao puxar (ex.: "portao_aranha_aberto"). Vazio = não salva.
 @export var flag := ""
+## Caixa/barril (quebrável) que esconde a alavanca: até ela quebrar, a alavanca
+## fica invisível e não dá para puxar. Vazio = sempre à mostra.
+@export var escondida_atras: NodePath
+@export var mensagem_revelada := "Tinha uma alavanca escondida atrás da caixa!"
 
 var _perto := false
 var _usada := false
+var _escondida := false
+var _area: Area2D
 
 
 func _ready() -> void:
@@ -20,6 +26,7 @@ func _ready() -> void:
 	stop()
 	frame = 0
 	var area := Area2D.new()
+	_area = area
 	area.collision_layer = 0
 	area.monitorable = false
 	var cs := CollisionShape2D.new()
@@ -34,6 +41,42 @@ func _ready() -> void:
 	area.body_exited.connect(_on_saiu)
 	if flag != "" and Jogo.get_flag(flag, false):
 		_ja_puxada.call_deferred()
+	elif not escondida_atras.is_empty():
+		_esconder()
+
+
+## Fica invisível até a caixa da frente quebrar. A checagem espera um quadro
+## porque o andar.gd só monta os quebráveis (e apaga os já quebrados) depois.
+func _esconder() -> void:
+	_escondida = true
+	visible = false
+	_area.monitoring = false
+	_ligar_caixa.call_deferred()
+
+
+func _ligar_caixa() -> void:
+	var caixa := get_node_or_null(escondida_atras)
+	if caixa == null or caixa.is_queued_for_deletion():
+		_revelar(true)  # já foi quebrada num jogo anterior
+		return
+	for c in caixa.get_children():
+		if c.has_signal("quebrou"):
+			c.quebrou.connect(_revelar)
+			return
+	_revelar(true)  # não é quebrável: não deixa a alavanca presa escondida
+
+
+func _revelar(silencioso := false) -> void:
+	if not _escondida:
+		return
+	_escondida = false
+	visible = true
+	_area.set_deferred("monitoring", true)
+	if silencioso:
+		return
+	Jogo.mostrar_mensagem(mensagem_revelada, 2.5)
+	modulate = Color(2, 2, 2)
+	create_tween().tween_property(self, "modulate", Color.WHITE, 0.5)
 
 
 ## Estado salvo: alavanca puxada e alvo destrancado, sem animação nem mensagem.
@@ -46,7 +89,7 @@ func _ja_puxada() -> void:
 
 
 func _on_entrou(body: Node) -> void:
-	if body.is_in_group("player") and not _usada:
+	if body.is_in_group("player") and not _usada and not _escondida:
 		_perto = true
 		Jogo.mostrar_dica("E: puxar alavanca")
 

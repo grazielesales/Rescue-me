@@ -33,6 +33,7 @@
 [ext_resource type="Texture2D" uid="uid://bhsjsn6b3e2ia" path="res://assets/tile/Tiled_files/fire_animation.png" id="melh_fogo"]
 [ext_resource type="Script" uid="uid://uiia7mfveays" path="res://mundo/salas/luz_oscilante.gd" id="melh_luz_oscilante"]
 [ext_resource type="Texture2D" uid="uid://dugbue3sygbx6" path="res://assets/tile/Tiled_files/decorative_cracks_floor.png" id="melh_rachaduras"]
+[ext_resource type="PackedScene" path="res://personagens/filho/filho.tscn" id="filho_cena"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_bnrcu"]
 texture = ExtResource("2_wf3d3")
@@ -4084,6 +4085,10 @@ position = Vector2(404, 258)
 
 [node name="demonio feiticeiro 2" parent="Entities" unique_id=1113584374 instance=ExtResource("demonio_cena")]
 position = Vector2(456, 270)
+
+[node name="filho" parent="Entities" unique_id=1828840413 instance=ExtResource("filho_cena")]
+position = Vector2(432, 181)
+sala = NodePath("../../Salas/SalaDoFeiticeiro")
 
 [node name="pai" parent="Entities" unique_id=1866117915 groups=["player"] instance=ExtResource("24_6ik8q")]
 position = Vector2(304, 88)

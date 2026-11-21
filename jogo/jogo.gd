@@ -562,7 +562,7 @@ func ja_criou(r: Dictionary) -> bool:
 
 
 func pode_criar(r: Dictionary) -> bool:
-	if ja_criou(r):
+	if ja_criou(r) or not receitas_conhecidas.has(r.id):
 		return false
 	for m in r.custo:
 		if quantidade(m) < r.custo[m]:

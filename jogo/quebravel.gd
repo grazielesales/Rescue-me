@@ -3,6 +3,9 @@ extends Node2D
 ## Ao quebrar, solta madeira e sucata (GDD 4.1) e não volta mais.
 ## O andar.gd coloca este nó sozinho nos props cujo nome começa com "caixa"/"barril".
 
+## Avisa quem estiver escondido atrás (ex.: alavanca.gd com `escondida_atras`).
+signal quebrou
+
 var chave := ""
 var tipo := "Caixa"
 var vida := 2
@@ -27,6 +30,7 @@ func levar_dano(qtd: int, direcao: Vector2, _arma := {}) -> void:
 		return
 	remove_from_group("atingiveis")
 	Jogo.registrar_morte(chave, "")
+	quebrou.emit()
 	for d in Itens.CAIXA_DROPS:
 		if randf() <= d[3]:
 			Coletavel.soltar(alvo.get_parent(), alvo.global_position, d[0], randi_range(d[1], d[2]))

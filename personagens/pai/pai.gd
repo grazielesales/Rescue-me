@@ -162,6 +162,10 @@ func atacar(mira := Vector2.ZERO) -> void:
 	if _recarga > 0.0:
 		return
 	var arma := Jogo.arma_atual()
+	if Jogo.melhorias.has("choque"):
+		# melhoria "Arma eletrificada": o golpe atordoa o monstro por um instante
+		arma = arma.duplicate()
+		arma["choque"] = Itens.TEMPO_CHOQUE
 	_recarga = arma.recarga
 	var centro := global_position + _golpe.position
 	var dir := mira if mira != Vector2.ZERO else get_global_mouse_position() - centro

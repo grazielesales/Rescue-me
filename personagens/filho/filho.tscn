@@ -1,0 +1,161 @@
+[gd_scene load_steps=19 format=3]
+
+[ext_resource type="Script" path="res://personagens/filho/filho.gd" id="script_filho"]
+[ext_resource type="Texture2D" path="res://personagens/filho/filho_parado.png" id="tex_parado"]
+[ext_resource type="Texture2D" path="res://personagens/filho/filho_andando.png" id="tex_andando"]
+
+[sub_resource type="AtlasTexture" id="at_p0"]
+atlas = ExtResource("tex_parado")
+region = Rect2(72, 0, 24, 48)
+
+[sub_resource type="AtlasTexture" id="at_p1"]
+atlas = ExtResource("tex_parado")
+region = Rect2(48, 0, 24, 48)
+
+[sub_resource type="AtlasTexture" id="at_p2"]
+atlas = ExtResource("tex_parado")
+region = Rect2(24, 0, 24, 48)
+
+[sub_resource type="AtlasTexture" id="at_a0"]
+atlas = ExtResource("tex_andando")
+region = Rect2(0, 0, 24, 48)
+
+[sub_resource type="AtlasTexture" id="at_a1"]
+atlas = ExtResource("tex_andando")
+region = Rect2(24, 0, 24, 48)
+
+[sub_resource type="AtlasTexture" id="at_a2"]
+atlas = ExtResource("tex_andando")
+region = Rect2(48, 0, 24, 48)
+
+[sub_resource type="AtlasTexture" id="at_l0"]
+atlas = ExtResource("tex_andando")
+region = Rect2(0, 48, 24, 48)
+
+[sub_resource type="AtlasTexture" id="at_l1"]
+atlas = ExtResource("tex_andando")
+region = Rect2(24, 48, 24, 48)
+
+[sub_resource type="AtlasTexture" id="at_l2"]
+atlas = ExtResource("tex_andando")
+region = Rect2(48, 48, 24, 48)
+
+[sub_resource type="AtlasTexture" id="at_c0"]
+atlas = ExtResource("tex_andando")
+region = Rect2(0, 144, 24, 48)
+
+[sub_resource type="AtlasTexture" id="at_c1"]
+atlas = ExtResource("tex_andando")
+region = Rect2(24, 144, 24, 48)
+
+[sub_resource type="AtlasTexture" id="at_c2"]
+atlas = ExtResource("tex_andando")
+region = Rect2(48, 144, 24, 48)
+
+[sub_resource type="SpriteFrames" id="frames_filho"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("at_p0")
+}],
+"loop": true,
+"name": &"parado",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("at_p1")
+}],
+"loop": true,
+"name": &"parado_lado",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("at_p2")
+}],
+"loop": true,
+"name": &"parado_cima",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("at_a0")
+}, {
+"duration": 1.0,
+"texture": SubResource("at_a1")
+}, {
+"duration": 1.0,
+"texture": SubResource("at_a2")
+}],
+"loop": true,
+"name": &"andando",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("at_l0")
+}, {
+"duration": 1.0,
+"texture": SubResource("at_l1")
+}, {
+"duration": 1.0,
+"texture": SubResource("at_l2")
+}],
+"loop": true,
+"name": &"andando_lado",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("at_c0")
+}, {
+"duration": 1.0,
+"texture": SubResource("at_c1")
+}, {
+"duration": 1.0,
+"texture": SubResource("at_c2")
+}],
+"loop": true,
+"name": &"andando_cima",
+"speed": 5.0
+}]
+
+[sub_resource type="Gradient" id="grad_luz"]
+offsets = PackedFloat32Array(0, 1)
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0)
+
+[sub_resource type="GradientTexture2D" id="tex_luz"]
+gradient = SubResource("grad_luz")
+width = 96
+height = 96
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(1, 0.5)
+
+[sub_resource type="CircleShape2D" id="forma_bolha"]
+radius = 11.0
+
+[node name="filho" type="Node2D"]
+editor_description = "O filho. Preso numa bolha de magia até a sala do chefe ser vencida (campo sala). Ver personagens/filho/filho.gd."
+script = ExtResource("script_filho")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+light_mask = 2
+position = Vector2(0, -12)
+scale = Vector2(0.5, 0.5)
+sprite_frames = SubResource("frames_filho")
+animation = &"parado"
+
+[node name="Luz" type="PointLight2D" parent="."]
+position = Vector2(0, -10)
+color = Color(1, 0.86, 0.55, 1)
+energy = 0.3
+texture = SubResource("tex_luz")
+texture_scale = 1.0
+
+[node name="Bolha" type="StaticBody2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Bolha"]
+position = Vector2(0, -6)
+shape = SubResource("forma_bolha")

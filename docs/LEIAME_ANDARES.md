@@ -28,9 +28,11 @@ Para mover arquivos depois, faça isso **pelo FileSystem do editor do Godot**: e
 
 ## Alavanca do 1º andar (`mundo/alavanca/alavanca.gd`)
 
-- É o nó `Props/AnimatedSprite2D3`, perto do portão da sala da aranha.
+- É o nó `Props/AnimatedSprite2D3`, na parede da **Sala 1**, atrás da caixa `Props/caixa sala 1` (ao lado do baú).
+- **Escondida:** com `escondida_atras` apontando para a caixa, a alavanca fica invisível e não dá para puxar. Quando o Pai quebra a caixa, ela aparece com um brilho e a mensagem "Tinha uma alavanca escondida atrás da caixa!" (`mensagem_revelada`). O `quebravel.gd` ganhou o sinal `quebrou` para isso.
+- A caixa quebrada fica no save (como as outras), então ao voltar ao jogo a alavanca já aparece.
 - Chegue perto e aperte **E**: a alavanca vira e levanta o portão, que fica aberto de vez.
-- Até lá o portão fica trancado (`trancado = true` no `portao sala aranha`) e avisa que existe uma alavanca.
+- Até lá o portão fica trancado (`trancado = true` no `portao sala aranha`) e avisa: "O portão não abre. A alavanca deve estar escondida em algum canto."
 - O estado fica no save pela flag `portao_aranha_aberto` (campo `flag` da alavanca): ao voltar ao jogo, a alavanca já aparece puxada e o portão aberto.
 - O portão antigo `portao sala 2` é só decoração e fica escondido. O que funciona é o `portao sala aranha`.
 - A Sala da Aranha é um beco sem saída: o portão só guarda a própria sala.
@@ -91,13 +93,22 @@ O contorno do prédio é o mesmo do 1º andar, mas o miolo foi redesenhado:
 | **Salão** | Aberto, sem colunas no meio. |
 | **Ninho** (sudoeste) | Sala larga e baixa, com portão de grade e 5 aranhas pequenas. |
 | **Porão** e **Arena central** (sul) | Atrás de um paredão comprido, cada um com porta própria e ligados por uma porta lateral. |
-| **Sala do Feiticeiro espectral** (sudeste) | Entrada pela porta lateral da Arena. O chefão (wizard) e 2 demônios guardam a escadaria, que está bloqueada por escombros. |
+| **Sala do Feiticeiro espectral** (sudeste) | Entrada pela porta lateral da Arena. O chefão (wizard) e 2 demônios guardam a escadaria, que está bloqueada por escombros. O **filho** está preso numa bolha de magia em cima da plataforma, na frente da porta da escadaria. |
 
 - **Poço da escada:** quem chega do 1º andar sai de um poço no chão, à direita do salão (`mundo/escada/poco.png`). Para voltar, ande até a beira e aperte **baixo**. O Pai desce os degraus, escurece e some atrás da borda; a borda é o nó `cobertura do poco`, que só aparece durante a descida.
 - **Iluminação:** penumbra roxa e azul com luzes piscando. A visão base do Pai é 48.
 - **Tochas e janelas da parede** vêm da pasta `assets/tile`, a mesma das paredes (a pasta `Dungeon Free` saiu do projeto):
   - `Props/tocha na parede 1` a `11`: a tocha de tigela de `Tiled_files/fire_animation.png` (colunas 2 e 3, 6 quadros de 48 px, `SpriteFrames_tocha_parede`), com `offset` (-6, 0) para a haste ficar no ponto do nó;
   - `Props/janela gradeada 1` a `4`: a janela com grade de `Tiled_files/walls_floor.png`, recorte `Rect2(192, 416, 32, 32)`.
+
+## O filho (`personagens/filho/`)
+
+- Cena `filho.tscn` com o script `filho.gd`. No 2º andar ele é o nó `Entities/filho`, em (432, 181), em cima da plataforma da Sala do Feiticeiro, na frente da porta da escadaria.
+- **Preso:** fica numa bolha de magia roxa (desenhada no `_draw`, com colisão `Bolha`, então o Pai não encosta), meio tingido de roxo. Com **E** ele chama o Pai ("Pai! Eu tô aqui!" e outras falas em `falas_preso`). A luz dele (o dom do filho) é fraca e treme como vela.
+- **Livre:** o campo `sala` aponta para `Salas/SalaDoFeiticeiro`. Quando a arena é vencida (sinal `concluiu` do `sala.gd`), a bolha estoura, aparece "A magia que prendia o seu filho se desfez!" e a luz dele cresce. Se a sala já foi vencida no save, ele já começa livre.
+- **Reencontro:** livre, **E** ("E: abraçar") mostra o texto `texto_reencontro`. Ao fechar, marca a flag `filho_resgatado` e salva. Depois disso ele só diz "Vamos pra casa, pai.".
+- **Próximo passo (fim do jogo):** a fuga depois do chefe e o filho seguindo o Pai. As animações de andar já estão prontas para isso.
+- **Arte:** o próprio Pai em versão criança. As folhas do Pai (`assets/Modern tiles_Free/Old/idle_32x32_2.png` e `mv/Character_2_32x32_RPGMAKER.png`) foram reduzidas a 75% e o cabelo virou castanho escuro, em `personagens/filho/filho_parado.png` e `filho_andando.png` (quadros de 24×48). O sprite usa escala 0,5 e `light_mask = 2`, como o Pai. Animações: `parado`, `parado_lado`, `parado_cima`, `andando`, `andando_lado` e `andando_cima`.
 
 ## Decoração do 1º andar
 
@@ -204,6 +215,8 @@ Os móveis são todos da pasta `assets/Demo` (a mesma dos computadores da Sala d
   - A colisão é o nó `Props/plataforma do laboratorio` (126×58, a plataforma inteira): ninguém sobe nela; a luta é nos corredores em volta (16 px dos lados e na frente, mais largo no fundo).
   - Para mover a plataforma, mova os tiles, a colisão e os três móveis de cima juntos.
 - O Frankie começa no corredor da frente, à direita da plataforma.
+- **Desafio dos geradores:** o Frankie começa **carregado de energia** (brilho azul): os golpes só fazem um "tink" azul e não tiram vida. Na parede do fundo há duas alavancas, `Props/alavanca do gerador 1` e `2` (E: puxar, `mundo/alavanca/alavanca.gd`, flags `energia_lab_1` e `energia_lab_2`). Com uma puxada aparece "Ainda falta desligar um gerador."; com as duas, "A energia caiu!" e ele passa a levar dano. Então a luta é correr pelo corredor de trás da plataforma até as alavancas, fugindo dele.
+- **Recompensa:** vencer o Frankie ensina a receita **Arma eletrificada** (melhoria, 3 sucatas; ele solta 2 sucatas além do fragmento sombrio, então dá para fazer na hora). Com ela, qualquer golpe do Pai dá choque e o monstro fica **atordoado** por `Itens.TEMPO_CHOQUE` (0,6 s): não anda e o ataque que ele preparava não sai.
 - A luz da sala é fria e **pisca** (`cor_da_luz` e `piscar` = 0,3 na `SalaSudeste`), como se a energia do laboratório oscilasse.
 - Antes disso a sala foi um fosso e depois uma cisterna; o que sobrou disso é o `mundo/portas/grade_escada.gd` (grade de escada que tranca como porta de arena ou com chave), que ficou sem uso.
 
@@ -233,10 +246,10 @@ Os móveis são todos da pasta `assets/Demo` (a mesma dos computadores da Sala d
 
 | Cena | Tipo | Vida / dano | Como luta | Solta |
 |---|---|---|---|---|
-| `bruxa.tscn` | Bruxa | 12 / 1 | mantém distância e lança feitiços verdes | 3 pós mágicos |
+| `bruxa.tscn` | Bruxa | 12 / 1 | mantém distância e lança feitiços verdes | 3 pós mágicos, poção de vida, receita Cajado de fogo |
 | `olho_vermelho.tscn` | Olho maligno vermelho | 3 / 1 | fixo na parede, atira e fecha quando o Pai chega perto. **Fora de uso**: saiu da Sala Nordeste | pó mágico |
 | `olho_azul.tscn` | Olho maligno azul | 4 / 1 | voa e chicoteia com a cauda | teia |
-| `frankie.tscn` (com `inimigo.gd` na instância) | Frankie | 22 / 2 | mini-chefe do laboratório: lento, bate de perto; abaixo da metade da vida fica furioso (1,7x mais rápido) | fragmento sombrio |
+| `frankie.tscn` (com `inimigo.gd` na instância) | Frankie | 22 / 2 | mini-chefe do laboratório: carregado até o Pai desligar os 2 geradores; lento, bate de perto; abaixo da metade da vida fica furioso (1,7x mais rápido) | fragmento sombrio, 2 sucatas, poção de vida, receita Arma eletrificada |
 | `chama_sombria.tscn` | Chama sombria | 18 / 2 | mantém distância e atira bolas de fogo. **Fora de uso**: o Frankie ficou no lugar dela na Sala Sudeste | fragmento sombrio |
 
 | Sala | Monstros |
@@ -248,6 +261,26 @@ Os móveis são todos da pasta `assets/Demo` (a mesma dos computadores da Sala d
 | Sala Nordeste | a **Bruxa**, na sala de bruxaria. A porta abre só com a chave |
 | Sala Sudeste | **Frankie**, mini-chefe da arena, no laboratório. Vencer libera a escada |
 
+### Arma certa para cada monstro do 1º andar
+
+Nenhum monstro morre com 1 golpe, nem com a arma mais forte contra ele (por isso a aranha pequena tem vida 9 e o esqueleto, 12). Cada monstro tem uma fraqueza: a arma dele tem `bonus` contra aquele `tipo` (campo `bonus` em `Itens.ARMAS`; o Pai soma o bônus ao dano no golpe).
+
+| Monstro | Arma mais forte | Dano contra ele | Como conseguir a arma |
+|---|---|---|---|
+| Aranha pequena (vida 9) | Porrete de madeira | 3 + 2 = 5 (2 golpes; as outras armas, 3) | já vem no livro: 3 madeiras |
+| Esqueleto (vida 12) | Clava de osso | 4 + 3 = 7 (2 golpes; as outras armas, 4) | já vem no livro: 3 ossos + 2 madeiras |
+| Bruxa (vida 12) | Lança de teia | 3 + 3 = 6 (2 golpes; a clava, 3; as outras, 4) | já vem no livro: **3 teias** (era 4; o andar só tem 3 aranhas) + 2 madeiras + 1 sucata |
+| Frankie (vida 22) | Cajado de fogo | 3 + 4 = 7 (4 golpes; a clava, 6; as outras, 8) | a **Bruxa ensina** ao morrer: 2 pós mágicos + 2 madeiras (ela solta 3 pós) |
+
+O Cajado de fogo usa `assets/staffs/6.png`. A ordem natural é: aranhas → teias → lança → Bruxa → cajado → Frankie.
+
+| Quem | Cura que solta |
+|---|---|
+| Caixas e barris | maçã (20%) |
+| Aranha pequena | maçã (30%) |
+| Esqueleto | poção de vida (34%) |
+| Bruxa e Frankie | poção de vida (sempre) |
+
 ## Projéteis (`jogo/projetil.gd`)
 
 A Area2D do projétil só percebe o que se move (o Pai e os monstros). Para que ele pare em paredes de tile e em móveis, um raio curto testa, a cada quadro, o caminho do ponto atual até o próximo. Piscina, poço e muretas continuam sendo atravessados.
@@ -258,12 +291,12 @@ A Area2D do projétil só percebe o que se move (o Pai e os monstros). Para que 
 |---|---|---|
 | 1 | Sala de Comando | O Pai começa **sem arma**, com socos (dano 1, alcance curto). Os socos quebram caixas e barris, que dão madeira. O **Porrete de madeira** (dano 3, 3 madeiras) já vem no livro. |
 | 2 | Sala 1 | O bilhete ensina o **curativo** (deixou de ser receita inicial). |
-| 3 | Sala da Aranha | A alavanca do corredor levanta o portão (flag `portao_aranha_aberto`). |
+| 3 | Sala 1 → Sala da Aranha | Quebrar a caixa ao lado do baú, na Sala 1, revela a alavanca, que levanta o portão (flag `portao_aranha_aberto`). |
 | 4 | Fosso do bolsão oeste | A chave no fundo do fosso (`Props/chave da tumba`, `mundo/bau/chave_no_chao.gd`) é pega passando por cima, depois dos espinhos. Dá a flag `chave_tumba` e salva na hora. |
 | 5 | Sala Sul | As duas portas (`porta sala sul oeste` e `leste`) têm `flag_necessaria = "chave_tumba"`: sem a chave do fosso, mostram "Trancada. A chave deve estar em algum lugar perigoso.". |
 | 6 | Sala Sul | O baú `Props/bau tumba` (`mundo/bau/bau.gd`, E: abrir) dá as flags `tumba_aberta` e `chave_nordeste` e mostra "Você encontrou uma chave enferrujada.". Só então os 3 esqueletos **aparecem** (`flag_aparecer` no `inimigo.gd`: até lá ficam invisíveis, sem colisão e sem levar golpe) e acordam. `tumba_aberta` também ativa a arena (`flag_para_ativar` no `sala.gd`). |
 | 7 | Sala Nordeste | A porta (`flag_necessaria = "chave_nordeste"` no `porta.gd`) mostra "Trancada. Precisa de uma chave." até o Pai ter a chave. Trancada, ela não acende a sala. |
-| 8 | Sala Sudeste | Arena com `flag_ao_vencer = "escada_liberada"`: matar o Frankie libera a escada. Sem monstros, ela contaria como vencida quando o Pai entrasse. |
+| 8 | Sala Sudeste | Arena com `flag_ao_vencer = "escada_liberada"`: o Frankie só leva dano depois das duas alavancas dos geradores; matá-lo libera a escada e ensina a Arma eletrificada. Sem monstros, ela contaria como vencida quando o Pai entrasse. |
 | 9 | Escada | `flag_necessaria = "escada_liberada"` no `escada.gd`. Antes disso aparece "Algo sombrio bloqueia a passagem.". |
 
 - Alavanca, baú e arena vencida **salvam na hora** (`Jogo.salvar_progresso()`).
@@ -283,7 +316,7 @@ Tudo fica no `inimigo.gd` e os números ficam em `Itens.INIMIGOS`, para ajustar.
   - Pés em (172, -48), ao lado do caldeirão.
   - Animações: a folha tem as 4 direções, mas o `inimigo.gd` só espelha para os lados. Por isso a cena usa as linhas viradas para a direita (parada 3, andando 7, ataque 15) e a morte (linha 16). Não tem animação de dano: ela só pisca vermelho. Na linha 17 da folha ainda sobram efeitos (chama azul, clarão e anéis) para usar depois.
 - **Olho maligno vermelho** (`fixo`, fora de uso desde que a bruxa entrou): não anda. Atira um projétil lento e **fecha** por `tempo_fechado` (2,5 s) quando o Pai chega a `distancia_fechar` (28 px). Fechado, fica invulnerável. A cena continua pronta para outra sala.
-- **Frankie** (mini-chefe do laboratório): a cena `inimigos/frankie.tscn` (a mesma das criaturas do Laboratório do 2º andar) com o `inimigo.gd` e `tipo = "Frankie"` na instância `Entities/frankie SalaSudeste`. Vida 22, dano 2, `escala` 1,5.
+- **Frankie** (mini-chefe do laboratório; ver o desafio dos geradores na seção do laboratório): a cena `inimigos/frankie.tscn` (a mesma das criaturas do Laboratório do 2º andar) com o `inimigo.gd` e `tipo = "Frankie"` na instância `Entities/frankie SalaSudeste`. Vida 22, dano 2, no tamanho natural da folha (sem `escala`).
   - Lento (26), bate de perto (`alcance` 18) a cada 1,3 s.
   - Abaixo de `furia_vida` (50%): fica 1,7x mais rápido e bate mais vezes. Não deixa rastro (sem `rastro_dano` na tabela, a fúria só acelera).
   - Drop: fragmento sombrio. A morte dele vence a arena e dá `escada_liberada`.
@@ -314,6 +347,7 @@ A bruxa é a **Wizard sheet** de GandalfHardcore (`bruxa/Wizard sheet.png`, quad
 - **Salas bloqueadas** (`mundo/salas/sala.gd`): toda sala com `arena = true` tranca as `portas` quando o Pai entra e destranca quando o último monstro dela morre. Vencer a sala vira ponto de salvamento.
 - **Morte:** o Pai volta para o último ponto de salvamento (começo do andar ou última sala vencida), com vida cheia e sem perder materiais.
 - **Drops:** monstros, caixas e barris soltam materiais; o Pai pega passando por cima. Todo sprite em `Props` cujo nome começa com "caixa" ou "barril" vira quebrável (`jogo/quebravel.gd`).
+- **Cura no chão** (`Itens.CURAS`): a **maçã** (cura 1) e a **poção de vida** (cura 3) curam na hora em que o Pai passa por cima e não vão para o inventário (`coletavel.gd` chama `pai.curar()`). O curativo continua sendo feito no livro e usado com Q. Sprites: `assets/itens-armas/warrior-items__asset.png`.
 - **Receitas novas:** um bilhete com o campo `receita` preenchido é uma página do livro (no 2º andar, a página do Depósito libera a Adaga venenosa). Derrotar a criatura mágica libera a Luz reforçada, e o feiticeiro, a Espada espectral.
 - **HUD** (`jogo/hud.gd`) e **livro/inventário** (`jogo/livro.gd`) são criados pelo autoload `Jogo`.
 
@@ -367,8 +401,9 @@ A bruxa é a **Wizard sheet** de GandalfHardcore (`bruxa/Wizard sheet.png`, quad
 - Arte do **Pixel UI Fantasy Free** (tema parchment), copiada para `addons/pixel_ui_fantasy/`.
   - Licença CC BY 4.0: os créditos do jogo precisam ter a linha
     `Pixel UI Fantasy Free by heyheythere - https://heyheythere.itch.io/pixel-ui-fantasy-free - CC BY 4.0`.
-- Página esquerda: lista de receitas (✓ já criada, ! dá para criar, cadeado = não descoberta).
-- Página direita: ícone, efeito, materiais (tem/precisa) e o botão Criar.
+- Página esquerda: lista de **todas** as receitas do jogo (✓ já criada, ! dá para criar). As não descobertas aparecem com o nome, mas apagadas: ícone cinza e transparente (`COR_BLOQUEADA`), texto fraco e cadeado.
+- Página direita: ícone, efeito, materiais (tem/precisa) e o botão Criar. Numa receita não descoberta, no lugar do botão aparece "Ainda não descoberta" e a dica de como liberar: "Derrote: <monstro>" (campo `receita` em `Itens.INIMIGOS`) ou "Procure a página perdida nos andares." (bilhete).
+- `Jogo.pode_criar()` só aceita receitas descobertas, então ter os materiais não basta.
 - Fitas na lateral filtram por categoria (todas, armas, cura, melhorias).
 - Teclado: setas cima/baixo escolhem, esquerda/direita trocam a fita, Enter/Espaço criam, R/Esc fecham.
 - O livro é desenhado em 428x242 pixels e ampliado pela maior escala inteira que cabe na janela.

@@ -1,7 +1,8 @@
 extends CanvasLayer
 ## Livro de receitas (R), GDD 4.2 e 7.4, com a arte do Pixel UI Fantasy (tema parchment).
 ## Abre por cima do jogo, com o jogo pausado. Esc ou R fecham.
-## - página esquerda: lista de receitas; as não descobertas aparecem como "???";
+## - página esquerda: lista de todas as receitas; as não descobertas aparecem
+##   apagadas (cinza e transparentes, com cadeado) e não dá para criar;
 ## - página direita: a receita escolhida, com ícone, efeito, materiais
 ##   (tem/precisa) e o botão Criar, ativo só com tudo disponível;
 ## - fitas na lateral: filtram por categoria (todas, armas, cura, melhorias).
@@ -25,6 +26,8 @@ const COR_TINTA_FRACA := Color(0.227, 0.133, 0.094, 0.55)
 const COR_OK := Color(0.15, 0.42, 0.1)
 const COR_FALTA := Color(0.62, 0.12, 0.1)
 const COR_DICA := Color(0.93, 0.88, 0.76, 0.8)
+## Ícone de receita ainda não descoberta: cinza e meio transparente.
+const COR_BLOQUEADA := Color(0.3, 0.3, 0.3, 0.45)
 
 ## Fitas da lateral: filtro, nome, ícone e cor.
 const ABAS := [
@@ -202,17 +205,23 @@ func _montar() -> void:
 	for c in _lista.get_children():
 		c.queue_free()
 	_visiveis.clear()
-	var da_aba := []
+	var conhecidas := 0
 	for r in Itens.RECEITAS:
 		if _aba == "todas" or r.tipo == _aba:
-			da_aba.append(r)
+			_visiveis.append(r.id)
 			if Jogo.receitas_conhecidas.has(r.id):
-				_visiveis.append(r.id)
+				conhecidas += 1
 	if not _visiveis.has(_sel):
-		_sel = _visiveis[0] if not _visiveis.is_empty() else ""
-	for r in da_aba:
-		_lista.add_child(_linha(r, Jogo.receitas_conhecidas.has(r.id)))
-	_contagem.text = "%d/%d" % [_visiveis.size(), da_aba.size()]
+		_sel = ""
+		for id in _visiveis:  # abre na primeira descoberta
+			if Jogo.receitas_conhecidas.has(id):
+				_sel = id
+				break
+		if _sel == "" and not _visiveis.is_empty():
+			_sel = _visiveis[0]
+	for id in _visiveis:
+		_lista.add_child(_linha(Itens.receita(id), Jogo.receitas_conhecidas.has(id)))
+	_contagem.text = "%d/%d" % [conhecidas, _visiveis.size()]
 	_montar_abas()
 	_montar_detalhe()
 
@@ -229,7 +238,8 @@ func _montar_abas() -> void:
 			b.add_theme_stylebox_override(estado, _estilo_fita(cor.lightened(0.15) if estado.begins_with("hover") else cor))
 
 
-## Uma linha da lista: ícone, nome e, à direita, ✓ (já criado) ou ! (dá para criar).
+## Uma linha da lista: ícone, nome e, à direita, ✓ (já criado), ! (dá para criar)
+## ou cadeado (ainda não descoberta: ícone cinza e transparente, texto apagado).
 func _linha(r: Dictionary, conhece: bool) -> Button:
 	var b := Button.new()
 	b.focus_mode = Control.FOCUS_NONE
@@ -238,28 +248,24 @@ func _linha(r: Dictionary, conhece: bool) -> Button:
 	b.expand_icon = true  # ícones altos cabem na altura da linha
 	b.add_theme_constant_override("icon_max_width", 16)
 	b.add_theme_constant_override("h_separation", 4)
-	var sel: bool = conhece and r.id == _sel
+	var sel: bool = r.id == _sel
 	b.add_theme_stylebox_override("normal", _estilo_sel if sel else _estilo_vazio)
 	b.add_theme_stylebox_override("hover", _estilo_sel if sel else _estilo_hover)
 	b.add_theme_stylebox_override("pressed", _estilo_sel)
 	b.add_theme_stylebox_override("hover_pressed", _estilo_sel)
 	b.add_theme_stylebox_override("disabled", _estilo_vazio)
 	for c in ["font_color", "font_hover_color", "font_pressed_color", "font_hover_pressed_color"]:
-		b.add_theme_color_override(c, COR_TINTA)
-	b.add_theme_color_override("font_disabled_color", COR_TINTA_FRACA)
-	if not conhece:
-		b.text = "???"
-		b.icon = load(UI + "icons/lock.png")
-		b.disabled = true
-		return b
+		b.add_theme_color_override(c, COR_TINTA if conhece else COR_TINTA_FRACA)
 	b.text = Itens.nome_receita(r)
 	b.icon = _icone(r)
-	var cor := _cor_icone(r)
+	var cor := _cor_icone(r) if conhece else COR_BLOQUEADA
 	for c in ["icon_normal_color", "icon_hover_color", "icon_pressed_color", "icon_hover_pressed_color"]:
 		b.add_theme_color_override(c, cor)
 	b.pressed.connect(_escolher.bind(r.id))
 	var marca := ""
-	if Jogo.ja_criou(r):
+	if not conhece:
+		marca = "icons/lock.png"
+	elif Jogo.ja_criou(r):
 		marca = "icons/check.png"
 	elif Jogo.pode_criar(r):
 		marca = "icons/quest.png"
@@ -287,6 +293,8 @@ func _montar_detalhe() -> void:
 		_detalhe.add_child(_texto("Procure páginas pelos andares e derrote monstros novos.", COR_TINTA_FRACA, true))
 		return
 	var r := Itens.receita(_sel)
+	var conhece: bool = Jogo.receitas_conhecidas.has(_sel)
+	var tinta := COR_TINTA if conhece else COR_TINTA_FRACA
 
 	# ícone grande no slot da cor do tipo + nome e tipo
 	var topo := HBoxContainer.new()
@@ -295,7 +303,7 @@ func _montar_detalhe() -> void:
 	slot.theme_type_variation = SLOT_POR_TIPO.get(r.tipo, &"InsetPanel")
 	var ic := TextureRect.new()
 	ic.texture = _icone(r)
-	ic.modulate = _cor_icone(r)
+	ic.modulate = _cor_icone(r) if conhece else COR_BLOQUEADA
 	ic.custom_minimum_size = Vector2(32, 32)
 	ic.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	ic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
@@ -304,13 +312,13 @@ func _montar_detalhe() -> void:
 	var nomes := VBoxContainer.new()
 	nomes.alignment = BoxContainer.ALIGNMENT_CENTER
 	nomes.add_theme_constant_override("separation", 0)
-	nomes.add_child(_texto(Itens.nome_receita(r), COR_TINTA))
+	nomes.add_child(_texto(Itens.nome_receita(r), tinta))
 	nomes.add_child(_texto(NOME_TIPO.get(r.tipo, ""), COR_TINTA_FRACA))
 	topo.add_child(nomes)
 	_detalhe.add_child(topo)
 
 	_detalhe.add_child(HSeparator.new())
-	_detalhe.add_child(_texto(r.efeito, COR_TINTA, true))
+	_detalhe.add_child(_texto(r.efeito, tinta, true))
 	if r.tipo == "arma":
 		var a: Dictionary = Itens.ARMAS[r.id]
 		_detalhe.add_child(_texto("Dano %d   Alcance %d   %.2fs" % [a.dano, a.alcance, a.recarga], COR_TINTA_FRACA))
@@ -331,10 +339,10 @@ func _montar_detalhe() -> void:
 		mi.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		mi.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		h.add_child(mi)
-		var nome := _texto(Itens.nome_material(m), COR_TINTA)
+		var nome := _texto(Itens.nome_material(m), tinta)
 		nome.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		h.add_child(nome)
-		h.add_child(_texto("%d/%d" % [tem, precisa], COR_OK if tem >= precisa else COR_FALTA))
+		h.add_child(_texto("%d/%d" % [tem, precisa], (COR_OK if tem >= precisa else COR_FALTA) if conhece else COR_TINTA_FRACA))
 		_detalhe.add_child(h)
 
 	var espaco := Control.new()
@@ -344,7 +352,23 @@ func _montar_detalhe() -> void:
 	var base := HBoxContainer.new()
 	base.alignment = BoxContainer.ALIGNMENT_CENTER
 	base.add_theme_constant_override("separation", 4)
-	if Jogo.ja_criou(r):
+	if not conhece:
+		var bloco := VBoxContainer.new()
+		bloco.custom_minimum_size.x = LARGURA_TEXTO
+		bloco.add_theme_constant_override("separation", 0)
+		var linha := HBoxContainer.new()
+		linha.alignment = BoxContainer.ALIGNMENT_CENTER
+		linha.add_theme_constant_override("separation", 4)
+		var cadeado := TextureRect.new()
+		cadeado.texture = load(UI + "icons/lock.png")
+		linha.add_child(cadeado)
+		linha.add_child(_texto("Ainda não descoberta", COR_TINTA))
+		bloco.add_child(linha)
+		var como := _texto(_como_descobrir(r), COR_TINTA_FRACA, true)
+		como.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		bloco.add_child(como)
+		base.add_child(bloco)
+	elif Jogo.ja_criou(r):
 		var ok := TextureRect.new()
 		ok.texture = load(UI + "icons/check.png")
 		base.add_child(ok)
@@ -358,6 +382,14 @@ func _montar_detalhe() -> void:
 		criar.pressed.connect(func(): Jogo.criar(r.id))
 		base.add_child(criar)
 	_detalhe.add_child(base)
+
+
+## Dica de como liberar uma receita: o monstro que ensina, ou uma página perdida.
+func _como_descobrir(r: Dictionary) -> String:
+	for tipo in Itens.INIMIGOS:
+		if Itens.INIMIGOS[tipo].get("receita", "") == r.id:
+			return "Derrote: %s" % tipo
+	return "Procure a página perdida nos andares."
 
 
 # --- navegação ---------------------------------------------------------------------------

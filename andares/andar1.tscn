@@ -44,6 +44,7 @@
 [ext_resource type="Texture2D" uid="uid://bl4e6xkmw1fou" path="res://assets/Demo/Furniture (892).png" id="lab_demo_892"]
 [ext_resource type="Texture2D" uid="uid://dxnlac4ipyxxc" path="res://assets/Demo/Furniture (1038).png" id="lab_demo_1038"]
 [ext_resource type="PackedScene" uid="uid://xer6p84i3fcr" path="res://inimigos/frankie.tscn" id="lab_frankie"]
+[ext_resource type="Texture2D" uid="uid://cs00d5nf85rne" path="res://assets/Pixel Art Top Down/Texture/TX Shadow.png" id="lab_sombra"]
 [ext_resource type="Script" uid="uid://81eb46821s34" path="res://mundo/armadilha/espinhos.gd" id="melh_espinhos"]
 [ext_resource type="Texture2D" uid="uid://bhsjsn6b3e2ia" path="res://assets/tile/Tiled_files/fire_animation.png" id="melh_fogo"]
 [ext_resource type="Texture2D" uid="uid://dugbue3sygbx6" path="res://assets/tile/Tiled_files/decorative_cracks_floor.png" id="melh_rachaduras"]
@@ -4580,8 +4581,14 @@ size = Vector2(30, 6)
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_lab_demo_46x8"]
 size = Vector2(46, 8)
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_lab_plataforma_126x58"]
-size = Vector2(123.00003, 76.000015)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_lab_borda_128x4"]
+size = Vector2(128, 4)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_lab_borda_4x80"]
+size = Vector2(4, 80)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_lab_borda_48x18"]
+size = Vector2(48, 18)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_colisao8"]
 size = Vector2(16, 32)
@@ -4787,8 +4794,8 @@ texture_scale = 1.05
 script = ExtResource("54_luz_osc")
 
 [node name="AnimatedSprite2D3" type="AnimatedSprite2D" parent="Props" unique_id=1474132409]
-editor_description = "Alavanca: E perto dela levanta o portão da sala da aranha."
-position = Vector2(-78, -101.00001)
+editor_description = "Alavanca escondida atrás da caixa sala 1: só aparece quando o Pai quebra a caixa. E perto dela levanta o portão da sala da aranha."
+position = Vector2(23, -180.00002)
 scale = Vector2(0.99999994, 0.99999994)
 sprite_frames = SubResource("SpriteFrames_k3k0d")
 frame_progress = 0.06464564
@@ -4797,6 +4804,7 @@ offset = Vector2(0, -16)
 script = ExtResource("26_alavanca")
 alvo = NodePath("../portao sala aranha")
 flag = "portao_aranha_aberto"
+escondida_atras = NodePath("../caixa sala 1")
 
 [node name="Colisao" type="StaticBody2D" parent="Props/AnimatedSprite2D3" unique_id=821449902]
 visible = false
@@ -4826,7 +4834,7 @@ position = Vector2(327, -150)
 
 [node name="baú" type="AnimatedSprite2D" parent="Props" unique_id=967800748]
 top_level = true
-position = Vector2(-321, -19)
+position = Vector2(-335, -19)
 sprite_frames = SubResource("SpriteFrames_e1nxh")
 animation = &"new_animation"
 frame_progress = 0.051662557
@@ -4952,6 +4960,7 @@ mensagem_trancada = "Trancada. A chave deve estar em algum lugar perigoso."
 [node name="portao sala aranha" parent="Props" unique_id=1030475343 instance=ExtResource("24_portao")]
 position = Vector2(-57, -67)
 trancado = true
+mensagem_trancado = "O portão não abre. A alavanca deve estar escondida em algum canto."
 
 [node name="barril comando 1" type="Sprite2D" parent="Props" unique_id=2099656122]
 visible = false
@@ -5232,6 +5241,14 @@ script = ExtResource("melh_espinhos")
 tamanho = Vector2i(2, 2)
 atraso = 1.2
 
+[node name="caixa sala 1" type="Sprite2D" parent="Props" unique_id=863312565]
+editor_description = "Caixa quebrável que esconde a alavanca do portão das aranhas (AnimatedSprite2D3)."
+position = Vector2(32, -178.00002)
+texture = ExtResource("13_o4i6i")
+offset = Vector2(0, -8)
+region_enabled = true
+region_rect = Rect2(82, 83, 13, 18)
+
 [node name="caixa nicho 1" type="Sprite2D" parent="Props" unique_id=907664222]
 position = Vector2(92, -141.00002)
 texture = ExtResource("13_o4i6i")
@@ -5420,14 +5437,6 @@ visible = false
 [node name="Forma" type="CollisionShape2D" parent="Props/deco vasos leste/Colisao" unique_id=994504342]
 position = Vector2(0, -3)
 shape = SubResource("RectangleShape2D_melh_16x6")
-
-[node name="deco ossos leste" type="Sprite2D" parent="Props" unique_id=660726506]
-z_index = -1
-position = Vector2(619.00006, 33)
-texture = ExtResource("5_880xg")
-offset = Vector2(0, -5)
-region_enabled = true
-region_rect = Rect2(322, 146, 12, 12)
 
 [node name="deco escudos leste" type="Sprite2D" parent="Props" unique_id=1311957686]
 z_index = -1
@@ -5705,6 +5714,7 @@ position = Vector2(0, -3)
 shape = SubResource("RectangleShape2D_lab_demo_32x6")
 
 [node name="deco tanque de criacao" type="Sprite2D" parent="Props" unique_id=1192202116]
+visible = false
 position = Vector2(802.00006, 65)
 scale = Vector2(0.78788066, 0.7352941)
 texture = ExtResource("lab_demo_1038")
@@ -5742,14 +5752,60 @@ visible = false
 position = Vector2(0, -4)
 shape = SubResource("RectangleShape2D_lab_demo_46x8")
 
+[node name="Sombra" type="Sprite2D" parent="Props/deco maca do laboratorio" unique_id=1239441278]
+modulate = Color(1, 1, 1, 0.4)
+z_index = -1
+position = Vector2(1, -9)
+texture = ExtResource("lab_sombra")
+flip_h = true
+region_enabled = true
+region_rect = Rect2(29, 125, 47, 28)
+
 [node name="plataforma do laboratorio" type="StaticBody2D" parent="Props" unique_id=1636009690]
-editor_description = "Colisão da plataforma elevada do laboratório do Frankie (os tiles ficam na camada Map/sombra, células 23 a 30 x 13 a 16). Em cima: a maca, o tanque de criação e o carregador elétrico."
+editor_description = "Bordas da plataforma elevada do laboratório (tiles na camada Map/sombra, células 23 a 30 x 12 a 16): fundo, laterais e a frente de tijolos. A frente tem um vão na escadinha (camada Map/escada, células 26 e 27): é por ali que se sobe. Em cima, a maca, o tanque e o carregador têm a própria colisão."
 position = Vector2(759, 91)
 
-[node name="Forma" type="CollisionShape2D" parent="Props/plataforma do laboratorio" unique_id=119182828]
-position = Vector2(0.5000305, -10)
-scale = Vector2(0.99999976, 0.99999976)
-shape = SubResource("RectangleShape2D_lab_plataforma_126x58")
+[node name="fundo" type="CollisionShape2D" parent="Props/plataforma do laboratorio" unique_id=1615527047]
+position = Vector2(0, -47)
+shape = SubResource("RectangleShape2D_lab_borda_128x4")
+
+[node name="lado esquerdo" type="CollisionShape2D" parent="Props/plataforma do laboratorio" unique_id=792364128]
+position = Vector2(-62, -9)
+shape = SubResource("RectangleShape2D_lab_borda_4x80")
+
+[node name="lado direito" type="CollisionShape2D" parent="Props/plataforma do laboratorio" unique_id=1372164881]
+position = Vector2(62, -9)
+shape = SubResource("RectangleShape2D_lab_borda_4x80")
+
+[node name="frente esquerda" type="CollisionShape2D" parent="Props/plataforma do laboratorio" unique_id=1026147583]
+position = Vector2(-40, 22)
+shape = SubResource("RectangleShape2D_lab_borda_48x18")
+
+[node name="frente direita" type="CollisionShape2D" parent="Props/plataforma do laboratorio" unique_id=91758158]
+position = Vector2(40, 22)
+shape = SubResource("RectangleShape2D_lab_borda_48x18")
+
+[node name="alavanca do gerador 1" type="AnimatedSprite2D" parent="Props" unique_id=1815206109]
+editor_description = "Desliga o gerador 1 do laboratório (E). Com as duas puxadas, o Frankie perde a carga e passa a levar dano (campo energia em Itens.INIMIGOS)."
+position = Vector2(767, 26)
+sprite_frames = SubResource("SpriteFrames_k3k0d")
+centered = false
+offset = Vector2(0, -16)
+script = ExtResource("26_alavanca")
+alvo = NodePath("../../Entities/frankie SalaSudeste")
+mensagem = "Clanc! Um gerador desligou."
+flag = "energia_lab_1"
+
+[node name="alavanca do gerador 2" type="AnimatedSprite2D" parent="Props" unique_id=19986694]
+editor_description = "Desliga o gerador 2 do laboratório (E). Com as duas puxadas, o Frankie perde a carga e passa a levar dano (campo energia em Itens.INIMIGOS)."
+position = Vector2(824, 26)
+sprite_frames = SubResource("SpriteFrames_k3k0d")
+centered = false
+offset = Vector2(0, -16)
+script = ExtResource("26_alavanca")
+alvo = NodePath("../../Entities/frankie SalaSudeste")
+mensagem = "Clanc! Um gerador desligou."
+flag = "energia_lab_2"
 
 [node name="Itens" type="Node2D" parent="." unique_id=934661648]
 y_sort_enabled = true
@@ -5820,7 +5876,7 @@ flag_aparecer = "tumba_aberta"
 position = Vector2(562, -109.99999)
 
 [node name="frankie SalaSudeste" parent="Entities" unique_id=1594438932 instance=ExtResource("lab_frankie")]
-position = Vector2(824, 189)
+position = Vector2(824, 198)
 script = ExtResource("40_inimigo")
 tipo = "Frankie"
 altura_pes = 16

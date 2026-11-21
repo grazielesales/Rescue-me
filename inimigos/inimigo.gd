@@ -134,6 +134,12 @@ var _base_y := 0.0
 ## Escondido até a flag_aparecer existir (camada de colisão guardada aqui).
 var _escondido := false
 var _camada := 0
+## Carregado de energia (campo "energia" da tabela): não leva dano até todas
+## as flags das alavancas existirem.
+var _carregado := false
+var _brilho_carga: PointLight2D
+## Atordoado pelo choque da "Arma eletrificada".
+var _atordoado_t := 0.0
 @onready var _sprite: AnimatedSprite2D = get_node_or_null("AnimatedSprite2D")
 
 
@@ -163,6 +169,8 @@ func _ready() -> void:
 	_preparar_navegacao.call_deferred()
 	if flag_aparecer != "" and not Jogo.get_flag(flag_aparecer, false):
 		_esconder()
+	if not _energia_ok():
+		_carregar()
 
 	if _sprite == null:
 		return
@@ -233,6 +241,46 @@ func _aparecer() -> void:
 	acordar()
 
 
+## Todas as flags de "energia" (alavancas) já foram marcadas?
+func _energia_ok() -> bool:
+	for f in _dados.get("energia", []):
+		if not Jogo.get_flag(f, false):
+			return false
+	return true
+
+
+## Fica carregado: brilho azul em volta e golpes sem efeito.
+func _carregar() -> void:
+	_carregado = true
+	_brilho_carga = PointLight2D.new()
+	_brilho_carga.texture = Projetil._textura_luz()
+	_brilho_carga.color = Color(0.5, 0.8, 1.0)
+	_brilho_carga.energy = 0.8
+	_brilho_carga.texture_scale = 1.4
+	_brilho_carga.position = Vector2(0, -10)
+	add_child(_brilho_carga)
+	if _sprite:
+		_sprite.self_modulate = Color(0.8, 0.95, 1.3)
+
+
+## Chamado pelas alavancas (alavanca.gd, `alvo`). `silencioso` = estado do save.
+func destrancar(silencioso := false) -> void:
+	if not _carregado:
+		return
+	if not _energia_ok():
+		if not silencioso:
+			Jogo.mostrar_mensagem("Ainda falta desligar um gerador.", 2.0, true)
+		return
+	_carregado = false
+	if is_instance_valid(_brilho_carga):
+		_brilho_carga.queue_free()
+	if _sprite:
+		_sprite.self_modulate = Color.WHITE
+	if not silencioso:
+		_piscar(Color(0.5, 0.8, 1.0))
+		Jogo.mostrar_mensagem("A energia caiu! Agora dá para machucar o Frankie.", 2.5, true)
+
+
 func _achar_sala() -> void:
 	for s in get_tree().get_nodes_in_group("salas"):
 		if s.contem(global_position):
@@ -299,6 +347,12 @@ func _physics_process(delta: float) -> void:
 	if _escondido:
 		if Jogo.get_flag(flag_aparecer, false):
 			_aparecer()
+		return
+	if _atordoado_t > 0.0:
+		_atordoado_t -= delta
+		velocity = _empurrao
+		_empurrao = _empurrao.move_toward(Vector2.ZERO, 500.0 * delta)
+		move_and_slide()
 		return
 	_recarga = maxf(0.0, _recarga - delta)
 	_travado_t = maxf(0.0, _travado_t - delta)
@@ -571,6 +625,10 @@ func levar_dano(qtd: int, direcao: Vector2, arma := {}) -> void:
 	if _fechado:
 		_piscar(Color(0.55, 0.55, 0.6))  # "tink": fechado não leva dano
 		return
+	if _carregado:
+		_piscar(Color(0.45, 0.75, 1.0))  # "tink" azul: carregado de energia
+		acordar()
+		return
 	vida -= qtd
 	acordar()
 	if not _fixo:
@@ -579,6 +637,10 @@ func levar_dano(qtd: int, direcao: Vector2, arma := {}) -> void:
 	if arma.has("veneno"):
 		_veneno_t = arma.veneno
 		_veneno_tick = 1.0
+	if arma.has("choque") and vida > 0:
+		_atordoado_t = arma.choque
+		_ataque_t = 0.0  # o golpe que ele preparava não sai
+		_piscar(Color(0.6, 0.85, 1.0))
 	if vida <= 0:
 		morrer()
 		return

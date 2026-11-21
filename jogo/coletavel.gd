@@ -87,6 +87,13 @@ func _on_body_entered(body: Node) -> void:
 		return
 	_pode_pegar = false
 	Jogo.remover_drop(id)
+	if Itens.CURAS.has(item) and body.has_method("curar"):
+		# maçã, poção de vida: curam na hora
+		var cura: int = Itens.CURAS[item] * qtd
+		body.curar(cura)
+		Jogo.mostrar_mensagem("%s: +%d de vida" % [Itens.nome_material(item), cura], 1.2)
+		queue_free()
+		return
 	Jogo.adicionar(item, qtd)
 	Jogo.mostrar_mensagem("+%d %s" % [qtd, Itens.nome_material(item)], 1.2)
 	queue_free()
