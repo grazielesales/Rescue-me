@@ -79,22 +79,23 @@ O antigo `portao sala 2`, que era só um sprite em loop e não bloqueava nada, f
   - `"down"` para escada que desce, como o poço do 2º andar.
 - `cobertura`: nó desenhado por cima do Pai só enquanto ele está na escada. Serve para ele sumir atrás da borda de um poço.
 - Selecione a escada no editor para ver o caminho (laranja) e a área do pé (verde).
-- Se o `destino` estiver vazio, aparece a `mensagem_sem_destino`. É o caso da escadaria da Sala do Feiticeiro: "A escada está bloqueada por escombros." (não haverá 3º andar).
+- Se o `destino` estiver vazio, aparece a `mensagem_sem_destino`. Hoje nenhuma escada usa isso: a escadaria bloqueada do 2º andar (para um 3º andar que não vai existir) saiu junto com a sala do sudeste.
 
 ## 2º andar (`andares/andar2.tscn`)
 
-O contorno do prédio é o mesmo do 1º andar, mas o miolo foi redesenhado:
+O contorno do prédio é quase o mesmo do 1º andar (sem a sala do sudeste), mas o miolo foi redesenhado. O Pai chega pelo poço, no **leste** (a escada do 1º andar fica no lado direito), e o chefe fica no ponto mais distante, no **sudoeste**. As marcas de mãos pequenas perto do poço "seguem para o oeste": é para lá que o filho foi levado.
 
 | Lugar | O que é |
 |---|---|
-| **Refúgio** (em cima da sala 1) | A única sala segura, com cama, baú e bilhete. |
-| **Laboratório** (em cima da sala de comando) | Arena com 2 criaturas, o desenho do filho e um relatório. A porta fica em outra posição e não há patamar. |
-| **Depósito** (sala nordeste) | Caminho opcional: aranha grande, baú e página de receita. |
+| **Depósito** (nordeste, perto do poço) | Primeira sala, opcional: a aranha grande (solta as presas da Adaga), 2 olhos azuis, baú, materiais e a página de receita da Adaga venenosa. |
+| **Laboratório** (norte) | Arena com 2 criaturas, o desenho do filho e o relatório nº 14. |
+| **Arena central** (sul) | Arena com 3 esqueletos. A parede leste dela agora é a parede de fora do prédio. |
+| **Porão** (sul) | Arena com 3 zumbis e os riscos na parede contando os dias. Ligado à Arena por uma porta lateral. |
 | **Salão** | Aberto, sem colunas no meio. |
-| **Ninho** (sudoeste) | Sala larga e baixa, com portão de grade e 5 aranhas pequenas. |
-| **Porão** e **Arena central** (sul) | Atrás de um paredão comprido, cada um com porta própria e ligados por uma porta lateral. |
-| **Sala do Feiticeiro espectral** (sudeste) | Entrada pela porta lateral da Arena. O chefão (wizard) e 2 demônios guardam a escadaria, que está bloqueada por escombros. O **filho** está preso numa bolha de magia em cima da plataforma, na frente da porta da escadaria. |
+| **Refúgio** (noroeste) | A única sala segura, com cama, baú e bilhete. Fica perto do santuário: dá para descansar antes do chefe. |
+| **Santuário do Feiticeiro** (sudoeste) | Entrada pelo portão de grade (`Props/portao do santuario`); a placa ao lado diz "SÓ LEVA O MENINO QUEM PASSAR POR MIM.". Dentro: o chefão (wizard), 2 demônios, o trono, a mesa de velas e o **filho**, preso numa bolha de magia sobre um círculo mágico. |
 
+- **Sala do sudeste removida:** a sala que foi do chefe e depois do Ninho saiu do andar, junto com as aranhas pequenas, a Aranha-mãe e a escadaria bloqueada. Os tiles dela viraram o bloco escuro de fora (`1,1` da `Map/wall`), e a coluna 21 virou a parede externa (tile `0,1`, com o canto `5,3` embaixo), fechando o vão da antiga porta lateral da Arena.
 - **Poço da escada:** quem chega do 1º andar sai de um poço no chão, à direita do salão (`mundo/escada/poco.png`). Para voltar, ande até a beira e aperte **baixo**. O Pai desce os degraus, escurece e some atrás da borda; a borda é o nó `cobertura do poco`, que só aparece durante a descida.
 - **Iluminação:** penumbra roxa e azul com luzes piscando. A visão base do Pai é 48.
 - **Tochas e janelas da parede** vêm da pasta `assets/tile`, a mesma das paredes (a pasta `Dungeon Free` saiu do projeto):
@@ -103,12 +104,12 @@ O contorno do prédio é o mesmo do 1º andar, mas o miolo foi redesenhado:
 
 ## O filho (`personagens/filho/`)
 
-- Cena `filho.tscn` com o script `filho.gd`. No 2º andar ele é o nó `Entities/filho`, em (432, 181), em cima da plataforma da Sala do Feiticeiro, na frente da porta da escadaria.
+- Cena `filho.tscn` com o script `filho.gd`. No 2º andar ele é o nó `Entities/filho`, em (-398, 216), na ponta oeste do Santuário do Feiticeiro, sobre o círculo mágico `Props/circulo do santuario`.
 - **Preso:** fica numa bolha de magia roxa (desenhada no `_draw`, com colisão `Bolha`, então o Pai não encosta), meio tingido de roxo. Com **E** ele chama o Pai ("Pai! Eu tô aqui!" e outras falas em `falas_preso`). A luz dele (o dom do filho) é fraca e treme como vela.
 - **Livre:** o campo `sala` aponta para `Salas/SalaDoFeiticeiro`. Quando a arena é vencida (sinal `concluiu` do `sala.gd`), a bolha estoura, aparece "A magia que prendia o seu filho se desfez!" e a luz dele cresce. Se a sala já foi vencida no save, ele já começa livre.
 - **Reencontro:** livre, **E** ("E: abraçar") mostra o texto `texto_reencontro`. Ao fechar, marca a flag `filho_resgatado` e salva. Depois disso ele só diz "Vamos pra casa, pai.".
 - **Próximo passo (fim do jogo):** a fuga depois do chefe e o filho seguindo o Pai. As animações de andar já estão prontas para isso.
-- **Arte:** o próprio Pai em versão criança. As folhas do Pai (`assets/Modern tiles_Free/Old/idle_32x32_2.png` e `mv/Character_2_32x32_RPGMAKER.png`) foram reduzidas a 75% e o cabelo virou castanho escuro, em `personagens/filho/filho_parado.png` e `filho_andando.png` (quadros de 24×48). O sprite usa escala 0,5 e `light_mask = 2`, como o Pai. Animações: `parado`, `parado_lado`, `parado_cima`, `andando`, `andando_lado` e `andando_cima`.
+- **Arte:** o próprio Pai em versão criança. As folhas do Pai (`assets/Modern tiles_Free/Old/idle_32x32_2.png` e `mv/Character_2_32x32_RPGMAKER.png`) foram reduzidas a 75% e o cabelo virou castanho escuro, em `personagens/filho/filho_parado.png` e `filho_andando.png` (quadros de 24×48). O sprite usa escala 0,5 e `light_mask = 2`, como o Pai, e a luz do filho tem `range_item_cull_mask = 3` para iluminar o próprio sprite (igual à `Visao` do Pai). Animações: `parado`, `parado_lado`, `parado_cima`, `andando`, `andando_lado` e `andando_cima`.
 
 ## Decoração do 1º andar
 
@@ -139,7 +140,7 @@ Os dois andares ganharam o visual do mapa de exemplo do pacote de tiles (`assets
 | Andar | Plataformas | Braseiros soltos | Espinhos | Objetos novos |
 |---|---|---|---|---|
 | 1º | salão leste (embaixo) | salão oeste, perto da escada | fosso do bolsão oeste (ver abaixo), salão leste, perto da Sala Sudeste | 11 caixas e barris quebráveis, pilhas de caixas, vasos, ouro, escudos na parede; teias, ossos e caveira na Sala da Aranha |
-| 2º | 2 no salão | salão (esquerda), perto da arena | salão (esquerda), salão (entre as plataformas), corredor entre o Ninho e o Porão (guarda caixas e barris) | 8 caixas e barris quebráveis, pilha de caixas, vasos, ouro, ossos |
+| 2º | 2 no salão | salão (esquerda), perto da arena | salão (esquerda), salão (entre as plataformas), corredor entre o Santuário e o Porão (guarda caixas e barris) | 8 caixas e barris quebráveis, pilha de caixas, vasos, ouro, ossos |
 
 - **Cuidados:**
   - o nó `Props` do 1º andar está em (-327, 150); quem posiciona algo por código precisa descontar isso;

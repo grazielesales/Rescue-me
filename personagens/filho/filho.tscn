@@ -149,6 +149,8 @@ animation = &"parado"
 
 [node name="Luz" type="PointLight2D" parent="."]
 position = Vector2(0, -10)
+range_item_cull_mask = 3
+editor_description = "A luz do filho (o dom dele). Ilumina o cenário (camada 1) e o próprio sprite (camada 2), como a Visao do Pai."
 color = Color(1, 0.86, 0.55, 1)
 energy = 0.3
 texture = SubResource("tex_luz")
