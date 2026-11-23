@@ -7,6 +7,9 @@ extends Node2D
 @export var nome := "1º andar"
 ## Sprites em Props cujo nome começa com uma destas palavras viram quebráveis.
 @export var prefixos_quebraveis: PackedStringArray = ["caixa", "barril"]
+## Música do andar em res://sons/musica (<musica>_ambiente.wav e
+## <musica>_tensao.wav). Vazio = o nome do arquivo da cena (ex.: "andar1").
+@export var musica := ""
 
 
 func _ready() -> void:
@@ -18,6 +21,7 @@ func _ready() -> void:
 	if Jogo.continuar_save(scene_file_path):
 		return
 	Jogo.definir_andar(nome)
+	Musica.tocar_andar(musica if musica != "" else scene_file_path.get_file().get_basename())
 	_preparar_quebraveis()
 	_recriar_drops()
 	_criar_navegacao()

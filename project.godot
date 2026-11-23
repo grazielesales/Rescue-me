@@ -18,6 +18,7 @@ config/icon="res://icon.svg"
 [autoload]
 
 Som="*res://jogo/som.gd"
+Musica="*res://jogo/musica.gd"
 Jogo="*res://jogo/jogo.gd"
 
 [display]

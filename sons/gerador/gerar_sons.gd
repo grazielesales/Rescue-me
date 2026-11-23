@@ -12,8 +12,14 @@ extends SceneTree
 ##
 ## Variações: arquivos nome_1.wav, nome_2.wav... são sorteados pelo Som
 ## (jogo/som.gd) a cada vez que "nome" toca.
+##
+## Músicas (sons/musica): uma ambiente e uma tensa por andar, em laço, do
+## mesmo tamanho, tocadas juntas pelo autoload Musica (jogo/musica.gd).
+## Só elas: acrescente "-- musica" no fim do comando. Só os efeitos: "-- efeitos".
 
-const SR := 44100
+## Taxa de amostragem atual (os efeitos usam 44,1 kHz; as músicas, 22,05 kHz,
+## para os arquivos longos ficarem menores).
+var SR := 44100
 
 var rng := RandomNumberGenerator.new()
 var _nome := ""
@@ -22,11 +28,15 @@ var _feitos := 0
 
 func _init() -> void:
 	var t0 := Time.get_ticks_msec()
-	_pai()
-	_armas()
-	_inimigos()
-	_mundo()
-	_interface()
+	var args := OS.get_cmdline_user_args()
+	if not "musica" in args:
+		_pai()
+		_armas()
+		_inimigos()
+		_mundo()
+		_interface()
+	if not "efeitos" in args:
+		_musicas()
 	print("%d sons gerados em %.1f s" % [_feitos, (Time.get_ticks_msec() - t0) / 1000.0])
 	quit()
 
@@ -339,6 +349,193 @@ func _interface() -> void:
 	salvar(somar(somar(metal(0.2, 2200, [1.0, 1.6, 2.9], 0.04), zunido(0.12, 1500, 3000), 1.2), clique(3000, 0.008), 0.5), 0.4)
 
 
+# --- músicas ------------------------------------------------------------------------
+## Cada andar: <andar>_ambiente.wav e <andar>_tensao.wav, com LACO segundos
+## (16 compassos a 120 bpm), mesmo tom e mesmos acordes, para a troca entre
+## elas ser só de volume. As duas emendam o fim no começo (laço sem estalo).
+
+const SR_MUSICA := 22050
+const LACO := 32.0
+
+## acordes = semitons a partir da `raiz` (um acorde a cada LACO / 4 s);
+## baixos = semitom da nota grave de cada acorde; dissonancia = intervalo das
+## cordas tensas (1 = segunda menor, 6 = trítono).
+const ANDARES := {
+	# 1º andar: ré menor, caixinha de música triste no escuro
+	"andar1": {
+		"raiz": 146.83, "drone": 73.42,
+		"acordes": [[0, 3, 7], [-4, 0, 3], [-7, -4, 0], [-5, -1, 2]],
+		"baixos": [0, -4, -7, -5],
+		"densidade": 0.22, "vibrato": 0.0, "oitava": 12, "vento": 500.0,
+		"dissonancia": 1, "sincopa": false,
+	},
+	# 2º andar: lá frígio, mais estranho (sino desafinado, luzes piscando)
+	"andar2": {
+		"raiz": 220.0, "drone": 55.0,
+		"acordes": [[0, 3, 7], [1, 5, 8], [0, 3, 7], [-1, 2, 5]],
+		"baixos": [0, 1, 0, -1],
+		"densidade": 0.18, "vibrato": 0.012, "oitava": 12, "vento": 750.0,
+		"dissonancia": 6, "sincopa": true,
+	},
+}
+
+
+func _musicas() -> void:
+	SR = SR_MUSICA
+	for andar in ANDARES:
+		var c: Dictionary = ANDARES[andar]
+		_s("musica/%s_base" % andar)
+		var pad := _norm(_pad(c))
+		var vento := _norm(_vento(c))
+		var melodia := _norm(_melodia(c))
+		var calmo := _norm(_drone(c, 260.0))
+
+		_s("musica/%s_ambiente" % andar)
+		var amb := somar(calmo, pad, 0.9)
+		amb = somar(amb, vento, 0.35)
+		amb = somar(amb, melodia, 0.55)
+		salvar(amb, 0.5, true)
+
+		_s("musica/%s_tensao" % andar)
+		var ten := somar(_norm(_drone(c, 520.0)), pad, 0.75)
+		ten = somar(ten, vento, 0.3)
+		ten = somar(ten, melodia, 0.2)
+		ten = somar(ten, _norm(_pulso(c)), 0.55)
+		ten = somar(ten, _norm(_tambor(c)), 0.85)
+		ten = somar(ten, _norm(_chimbal(c)), 0.22)
+		ten = somar(ten, _norm(_cordas(c)), 0.3)
+		salvar(saturar(ten, 1.3), 0.6, true)
+	SR = 44100
+
+
+## Frequência ajustada para dar um número inteiro de ciclos no laço.
+func _q(f: float) -> float:
+	return maxf(1.0, roundf(f * LACO)) / LACO
+
+
+func _norm(b: PackedFloat32Array) -> PackedFloat32Array:
+	var maior := 0.0
+	for v in b:
+		maior = maxf(maior, absf(v))
+	return ganho(b, 1.0 / maxf(maior, 0.000001))
+
+
+## Soma `b` em `dest` a partir de `t` segundos, dando a volta no fim do laço.
+func colocar(dest: PackedFloat32Array, b: PackedFloat32Array, t: float, g := 1.0) -> PackedFloat32Array:
+	var o := dest.duplicate()
+	var tam := o.size()
+	var ini := int(t * SR)
+	for i in b.size():
+		o[posmod(ini + i, tam)] += b[i] * g
+	return o
+
+
+func _seg_acorde(c: Dictionary) -> float:
+	return LACO / c.acordes.size()
+
+
+func _nota(c: Dictionary, semitom: float, oitavas := 0) -> float:
+	return c.raiz * pow(2.0, semitom / 12.0 + oitavas)
+
+
+## Zumbido grave contínuo que "respira" devagar.
+func _drone(c: Dictionary, brilho: float) -> PackedFloat32Array:
+	# gera 1 s a mais e descarta o começo: o filtro já entra "aquecido" e o
+	# trecho final emenda certinho no inicial (o sinal se repete a cada LACO)
+	var f := _q(c.drone)
+	var d := somar(osc(LACO + 1.0, f, f, "serra"), osc(LACO + 1.0, _q(f * 1.004), -1, "serra"), 0.8)
+	d = somar(d, osc(LACO + 1.0, f), 0.8)
+	d = pb(d, brilho).slice(SR, SR + _n(LACO))
+	return tremolo(d, _q(0.125), 0.35)
+
+
+## Acordes longos e macios (um por segmento, entrando devagar).
+func _pad(c: Dictionary) -> PackedFloat32Array:
+	var o := silencio(LACO)
+	var seg := _seg_acorde(c)
+	for i in c.acordes.size():
+		var acorde := silencio(seg + 2.0)
+		for s in c.acordes[i]:
+			var f := _nota(c, s)
+			acorde = somar(acorde, osc(seg + 2.0, f * 0.997, -1, "tri"), 0.5)
+			acorde = somar(acorde, osc(seg + 2.0, f * 1.003, -1, "tri"), 0.5)
+		o = colocar(o, sino(pb(acorde, 1100), 0.3, 0.7), i * seg - 1.0)
+	return o
+
+
+## Notas soltas de caixinha de música/sino, com eco, nas notas do acorde.
+func _melodia(c: Dictionary) -> PackedFloat32Array:
+	var o := silencio(LACO)
+	var passo := 0.5  # um tempo a 120 bpm
+	var seg := _seg_acorde(c)
+	for b in int(LACO / passo):
+		if rng.randf() > c.densidade:
+			continue
+		var t := b * passo
+		var acorde: Array = c.acordes[mini(int(t / seg), c.acordes.size() - 1)]
+		var s: float = acorde[rng.randi() % acorde.size()] + c.oitava * (1 + rng.randi() % 2)
+		var f := _nota(c, s)
+		var nota := somar(osc(1.4, f, -1, "sen", 5.0, c.vibrato), osc(1.4, f * 2.0), 0.25)
+		nota = pb(env(nota, 0.004, 0.35), 3000)
+		for e in 3:
+			o = colocar(o, nota, t + e * 0.375, pow(0.45, e))
+	return o
+
+
+## Vento/ar do porão: ruído numa banda que sobe e desce de volume.
+func _vento(c: Dictionary) -> PackedFloat32Array:
+	var v := banda(ruido(LACO), c.vento, -1.0, 0.5)
+	v = tremolo(v, _q(1.0 / 16.0), 0.85)
+	return tremolo(v, _q(0.19), 0.4)
+
+
+## Tensão: baixo pulsando em colcheias, seguindo o acorde.
+func _pulso(c: Dictionary) -> PackedFloat32Array:
+	var o := silencio(LACO)
+	var seg := _seg_acorde(c)
+	for k in int(LACO / 0.25):
+		if c.sincopa and k % 8 in [3, 6]:
+			continue
+		var t := k * 0.25
+		var f := _nota(c, c.baixos[mini(int(t / seg), c.baixos.size() - 1)], -1)
+		var n := env(pb(osc(0.22, f, -1, "serra"), 650), 0.004, 0.07)
+		o = colocar(o, n, t, 1.0 if k % 2 == 0 else 0.6)
+	return o
+
+
+## Tensão: tambor grave como batida de coração (tum-tum a cada compasso e meio).
+func _tambor(c: Dictionary) -> PackedFloat32Array:
+	var o := silencio(LACO)
+	var bumbo := baque(0.6, 75, 42, 300)
+	var passo := 0.5 if c.sincopa else 1.0
+	for k in int(LACO / passo):
+		o = colocar(o, bumbo, k * passo, 1.0 if k % 2 == 0 else 0.7)
+		if not c.sincopa:
+			o = colocar(o, bumbo, k * passo + 0.28, 0.5)
+	return o
+
+
+## Tensão: tique-taque agudo nas colcheias.
+func _chimbal(_c: Dictionary) -> PackedFloat32Array:
+	var o := silencio(LACO)
+	for k in int(LACO / 0.25):
+		var tic := env(pa(ruido(0.05), 6000), 0.001, 0.012 if k % 2 == 0 else 0.025)
+		o = colocar(o, tic, k * 0.25, 0.6 if k % 2 == 0 else 1.0)
+	return o
+
+
+## Tensão: cordas agudas em trêmulo, dissonantes, crescendo em cada acorde.
+func _cordas(c: Dictionary) -> PackedFloat32Array:
+	var o := silencio(LACO)
+	var seg := _seg_acorde(c)
+	for i in c.baixos.size():
+		var f := _nota(c, c.baixos[i], 1)
+		var par := somar(osc(seg + 1.0, f, -1, "serra", 5.5, 0.004), osc(seg + 1.0, f * pow(2.0, c.dissonancia / 12.0), -1, "serra", 6.1, 0.004))
+		par = tremolo(pb(par, 2200), 8.0, 0.6)
+		o = colocar(o, sino(par, 0.75, 1.2), i * seg - 0.5)
+	return o
+
+
 # === síntese ==========================================================================
 # Todo sinal é um PackedFloat32Array mono a 44,1 kHz, de -1 a 1 (mais ou menos).
 # As funções devolvem um sinal novo, sem mexer no que receberam.
@@ -629,9 +826,11 @@ func zap(dur: float) -> PackedFloat32Array:
 # --- gravação ---------------------------------------------------------------------------
 
 ## Tira o silêncio do fim, normaliza para `pico` (0–1, o volume relativo do
-## som no jogo) e grava res://sons/<nome>.wav (16 bits, mono, 44,1 kHz).
-func salvar(b: PackedFloat32Array, pico := 0.7) -> void:
-	var o := pa(b, 25.0)  # tira o deslocamento DC
+## som no jogo) e grava res://sons/<nome>.wav (16 bits, mono, na taxa SR).
+## `laco` (músicas): não corta nem suaviza as pontas e grava o ponto de laço
+## no arquivo (bloco "smpl"), que o importador do Godot usa para repetir.
+func salvar(b: PackedFloat32Array, pico := 0.7, laco := false) -> void:
+	var o := b if laco else pa(b, 25.0)  # tira o deslocamento DC
 	var maior := 0.0
 	for v in o:
 		maior = maxf(maior, absf(v))
@@ -640,10 +839,10 @@ func salvar(b: PackedFloat32Array, pico := 0.7) -> void:
 		return
 	var g := pico / maior
 	var tam := o.size()
-	while tam > 1 and absf(o[tam - 1]) < maior * 0.002:
+	while not laco and tam > 1 and absf(o[tam - 1]) < maior * 0.002:
 		tam -= 1
-	var ini := mini(int(0.001 * SR), tam)
-	var fim := mini(int(0.012 * SR), tam)
+	var ini := 0 if laco else mini(int(0.001 * SR), tam)
+	var fim := 0 if laco else mini(int(0.012 * SR), tam)
 	var dados := PackedByteArray()
 	dados.resize(tam * 2)
 	for i in tam:
@@ -660,7 +859,7 @@ func salvar(b: PackedFloat32Array, pico := 0.7) -> void:
 		push_error("Não deu para gravar %s (%s)" % [caminho, error_string(FileAccess.get_open_error())])
 		return
 	f.store_buffer("RIFF".to_ascii_buffer())
-	f.store_32(36 + dados.size())
+	f.store_32(36 + dados.size() + (68 if laco else 0))
 	f.store_buffer("WAVE".to_ascii_buffer())
 	f.store_buffer("fmt ".to_ascii_buffer())
 	f.store_32(16)       # tamanho do bloco fmt
@@ -673,6 +872,19 @@ func salvar(b: PackedFloat32Array, pico := 0.7) -> void:
 	f.store_buffer("data".to_ascii_buffer())
 	f.store_32(dados.size())
 	f.store_buffer(dados)
+	if laco:
+		f.store_buffer("smpl".to_ascii_buffer())
+		f.store_32(60)
+		for k in 7:          # fabricante, produto, período, nota, afinação, SMPTE (x2)
+			f.store_32(1000000000 / SR if k == 2 else (60 if k == 3 else 0))
+		f.store_32(1)        # um laço
+		f.store_32(0)        # dados extras
+		f.store_32(0)        # id do laço
+		f.store_32(0)        # tipo: para a frente
+		f.store_32(0)        # começo (amostra)
+		f.store_32(tam - 1)  # fim (amostra)
+		f.store_32(0)        # fração
+		f.store_32(0)        # repetições (0 = sempre)
 	f.close()
 	_feitos += 1
 	print("  %-32s %.2f s" % [_nome, float(tam) / SR])

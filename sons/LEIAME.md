@@ -1,8 +1,20 @@
 # Sons
 
-Efeitos sonoros do jogo (ainda sem música). Todos são `.wav` mono de 44,1 kHz,
-gerados por síntese em `gerador/gerar_sons.gd`. Nada foi baixado, então não há
-licença de terceiros.
+Efeitos sonoros e músicas do jogo. Todos são `.wav` mono (efeitos a 44,1 kHz,
+músicas a 22,05 kHz), gerados por síntese em `gerador/gerar_sons.gd`. Nada foi
+baixado, então não há licença de terceiros.
+
+## Música
+
+`musica/<andar>_ambiente.wav` e `musica/<andar>_tensao.wav`: 32 s em laço,
+mesmo tom e mesmos acordes. O autoload `Musica` (`jogo/musica.gd`) toca as
+duas juntas e só muda o volume: a tensa entra quando o Pai está numa sala com
+monstro acordado (ou numa arena trancada) e sai uns segundos depois que a sala
+esvazia. O `andar.gd` escolhe a música pelo nome da cena (`andar1` →
+`andar1_*.wav`); para outro nome, preencha `musica` no nó raiz do andar.
+
+Para trocar por músicas de verdade: grave os dois arquivos com o mesmo tamanho
+e o laço marcado (ou marque *Loop Mode: Forward* na importação do Godot).
 
 ## Como o jogo toca os sons
 
@@ -46,4 +58,5 @@ Monstros maiores (escala do nó) soam mais graves.
 & "<pasta do Godot>\Godot_v4.7.2-stable_win64_console.exe" --headless --path . --script res://sons/gerador/gerar_sons.gd
 ```
 
-Depois abra o editor (ou rode com `--headless --import`) para importar.
+Acrescente ` -- musica` no fim para gerar só as músicas, ou ` -- efeitos` para
+só os efeitos. Depois abra o editor (ou rode com `--headless --import`) para importar.
