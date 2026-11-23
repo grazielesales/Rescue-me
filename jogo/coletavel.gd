@@ -95,5 +95,6 @@ func _on_body_entered(body: Node) -> void:
 		queue_free()
 		return
 	Jogo.adicionar(item, qtd)
+	Som.tocar("mundo/item", 0.0, 1.0, 0.03)
 	Jogo.mostrar_mensagem("+%d %s" % [qtd, Itens.nome_material(item)], 1.2)
 	queue_free()

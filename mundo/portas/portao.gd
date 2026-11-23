@@ -24,13 +24,16 @@ func _on_body_entered(body: Node) -> void:
 		return
 	if bloqueado:
 		Jogo.mostrar_mensagem("Trancado! Derrote todos os monstros da sala.", 1.5)
+		Som.tocar_em("mundo/porta_trancada", global_position)
 		return
 	if _levantado:
 		return
 	if trancado:
 		Jogo.mostrar_mensagem(mensagem_trancado)
+		Som.tocar_em("mundo/porta_trancada", global_position)
 		return
 	sprite.play("opening")
+	Som.tocar_em("mundo/portao_abrir", global_position)
 	collision.set_deferred("disabled", true)
 
 
@@ -38,6 +41,7 @@ func _on_body_exited(body: Node) -> void:
 	if not body.is_in_group("player") or _levantado or trancado or bloqueado:
 		return
 	sprite.play("closing")
+	Som.tocar_em("mundo/portao_fechar", global_position)
 	collision.set_deferred("disabled", false)
 
 
@@ -49,6 +53,7 @@ func bloquear() -> void:
 	bloqueado = true
 	if sprite.animation == "opening":
 		sprite.play("closing")
+		Som.tocar_em("mundo/portao_fechar", global_position)
 	collision.set_deferred("disabled", false)
 
 
@@ -56,6 +61,7 @@ func liberar() -> void:
 	bloqueado = false
 	if _levantado or (not trancado and Jogo._pai_ativo() and area.overlaps_body(Jogo.pai)):
 		sprite.play("opening")
+		Som.tocar_em("mundo/portao_abrir", global_position)
 		collision.set_deferred("disabled", true)
 
 
@@ -67,6 +73,8 @@ func destrancar(imediato := false) -> void:
 	if bloqueado:
 		return
 	sprite.play("opening")
+	if not imediato:
+		Som.tocar_em("mundo/portao_abrir", global_position)
 	if imediato:
 		sprite.frame = sprite.sprite_frames.get_frame_count("opening") - 1
 		sprite.pause()

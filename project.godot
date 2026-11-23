@@ -17,6 +17,7 @@ config/icon="res://icon.svg"
 
 [autoload]
 
+Som="*res://jogo/som.gd"
 Jogo="*res://jogo/jogo.gd"
 
 [display]

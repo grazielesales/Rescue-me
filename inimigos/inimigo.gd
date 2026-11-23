@@ -572,6 +572,7 @@ func _tick_furia(delta: float) -> void:
 		return
 	if not _furia and vida <= vida_maxima * limite:
 		_furia = true
+		Som.tocar_em("inimigos/furia", _ponto_som(), 0.0, _tom_som())
 		velocidade *= float(_dados.get("furia_velocidade", 1.5))
 		_recarga_max *= float(_dados.get("furia_recarga", 1.0))
 		_piscar(Color(0.8, 0.4, 1.0))
@@ -594,6 +595,8 @@ func _comecar_ataque() -> void:
 	_acertou = false
 	_recarga = _recarga_max
 	_tocar("attack", 0.6)
+	if not _projetil:
+		_som("ataque")  # corpo a corpo: o som avisa que o golpe vem aí
 
 
 ## Ataque com "aviso": o golpe só acerta no meio da animação.
@@ -605,6 +608,7 @@ func _tick_ataque(delta: float, pai: Node2D) -> void:
 	if pai == null:
 		return
 	if _projetil:
+		_som("ataque")  # de longe: o som sai junto com o projétil
 		var origem := global_position + Vector2(0, -10)
 		var p := Projetil.new()
 		p.direcao = ((pai.global_position + Vector2(0, -8)) - origem).normalized()
@@ -624,13 +628,19 @@ func levar_dano(qtd: int, direcao: Vector2, arma := {}) -> void:
 		return
 	if _fechado:
 		_piscar(Color(0.55, 0.55, 0.6))  # "tink": fechado não leva dano
+		Som.tocar_em("armas/bloqueado", _ponto_som())
 		return
 	if _carregado:
 		_piscar(Color(0.45, 0.75, 1.0))  # "tink" azul: carregado de energia
+		Som.tocar_em("armas/bloqueado", _ponto_som())
+		Som.tocar_em("armas/choque", _ponto_som(), -6.0)
 		acordar()
 		return
 	vida -= qtd
 	acordar()
+	Som.tocar_em("armas/impacto", _ponto_som())
+	if vida > 0:
+		_som("dano")
 	if not _fixo:
 		_empurrao = direcao * (60.0 if _projetil else 120.0)
 	_piscar(Color(1, 0.35, 0.35))
@@ -638,6 +648,7 @@ func levar_dano(qtd: int, direcao: Vector2, arma := {}) -> void:
 		_veneno_t = arma.veneno
 		_veneno_tick = 1.0
 	if arma.has("choque") and vida > 0:
+		Som.tocar_em("armas/choque", _ponto_som(), -3.0)
 		_atordoado_t = arma.choque
 		_ataque_t = 0.0  # o golpe que ele preparava não sai
 		_piscar(Color(0.6, 0.85, 1.0))
@@ -657,6 +668,7 @@ func _tick_veneno(delta: float) -> void:
 		_veneno_tick = 1.0
 		vida -= 1
 		_piscar(Color(0.5, 1, 0.4))
+		Som.tocar_em("armas/veneno", _ponto_som(), -2.0)
 		if vida <= 0:
 			morrer()
 
@@ -670,6 +682,7 @@ func morrer() -> void:
 	remove_from_group("atingiveis")
 	set_deferred("collision_layer", 0)
 	set_deferred("collision_mask", 0)
+	_som("morte")
 	morreu.emit(self)
 	Jogo.registrar_morte(_chave, tipo)
 	for d in _dados.get("drops", []):
@@ -718,6 +731,27 @@ func _piscar(cor: Color) -> void:
 		return
 	_sprite.modulate = cor
 	create_tween().tween_property(_sprite, "modulate", Color.WHITE, 0.2)
+
+
+# --- som ------------------------------------------------------------------------------
+
+## Som do monstro para `evento` ("ataque", "dano", "morte"), pela família do
+## campo "som" da tabela (ex.: "aranha" -> res://sons/inimigos/aranha_morte.wav).
+## Sem a família ou sem o arquivo, usa o genérico.
+func _som(evento: String) -> void:
+	var nome := "inimigos/%s_%s" % [_dados.get("som", "generico"), evento]
+	if not Som.existe(nome):
+		nome = "inimigos/generico_" + evento
+	Som.tocar_em(nome, _ponto_som(), 0.0, _tom_som())
+
+
+## Monstro maior = som mais grave (aranha grande x aranha pequena).
+func _tom_som() -> float:
+	return clampf(1.0 / sqrt(maxf(absf(scale.x), 0.01)), 0.75, 1.3)
+
+
+func _ponto_som() -> Vector2:
+	return global_position + Vector2(0, -8)
 
 
 

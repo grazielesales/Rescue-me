@@ -548,6 +548,7 @@ func aprender_receita(id: String) -> void:
 	if receitas_conhecidas.has(id):
 		return
 	receitas_conhecidas[id] = true
+	Som.tocar("mundo/receita_nova", 0.0, 1.0, 0.0)
 	mostrar_mensagem("Nova receita no livro (R): %s" % Itens.nome_receita(Itens.receita(id)), 3.0)
 	inventario_mudou.emit()
 
@@ -590,15 +591,18 @@ func criar(id: String) -> bool:
 			if _pai_ativo():
 				pai.aplicar_melhorias()
 	inventario_mudou.emit()
+	Som.tocar("interface/criar", 0.0, 1.0, 0.0)
 	mostrar_mensagem("Criado: %s" % Itens.nome_receita(r))
 	return true
 
 
 func usar_curativo() -> void:
 	if curativos <= 0:
+		Som.tocar("interface/erro", 0.0, 1.0, 0.0)
 		mostrar_mensagem("Sem curativos. Crie um no livro de receitas (R).")
 		return
 	if not _pai_ativo() or pai.vida >= pai.vida_maxima:
+		Som.tocar("interface/erro", 0.0, 1.0, 0.0)
 		mostrar_mensagem("A vida já está cheia.")
 		return
 	curativos -= 1
@@ -624,6 +628,8 @@ func arma_atual() -> Dictionary:
 func equipar_slot(i: int) -> void:
 	if slots[i] == "":
 		return
+	if i != slot_atual:
+		Som.tocar("interface/equipar")
 	slot_atual = i
 	armas_mudou.emit()
 	mostrar_mensagem(Itens.ARMAS[slots[i]].nome, 1.0)
@@ -636,6 +642,7 @@ func colocar_no_slot(id: String, i: int) -> void:
 		slots[antes] = slots[i]
 	slots[i] = id
 	slot_atual = i
+	Som.tocar("interface/equipar")
 	armas_mudou.emit()
 
 

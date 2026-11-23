@@ -75,6 +75,7 @@ func _revelar(silencioso := false) -> void:
 	if silencioso:
 		return
 	Jogo.mostrar_mensagem(mensagem_revelada, 2.5)
+	Som.tocar("mundo/achado", 0.0, 1.0, 0.0)
 	modulate = Color(2, 2, 2)
 	create_tween().tween_property(self, "modulate", Color.WHITE, 0.5)
 
@@ -112,6 +113,7 @@ func puxar() -> void:
 	if flag != "":
 		Jogo.set_flag(flag, true)
 		Jogo.salvar_progresso()
+	Som.tocar_em("mundo/alavanca", global_position)
 	play()
 	await animation_finished
 	var n := get_node_or_null(alvo)

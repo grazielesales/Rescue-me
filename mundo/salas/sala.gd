@@ -215,6 +215,7 @@ func _trancar() -> void:
 		var porta := get_node_or_null(caminho)
 		if porta and porta.has_method("bloquear"):
 			porta.bloquear()
+	Som.tocar("mundo/sala_trancar", 0.0, 1.0, 0.0)
 	Jogo.mostrar_mensagem("As portas se fecharam! Derrote todos os monstros.", 2.5, true)
 
 
@@ -231,6 +232,8 @@ func _vencer() -> void:
 	set_physics_process(false)
 	var estava_trancada := _trancada
 	_trancada = false
+	if estava_trancada:
+		Som.tocar("mundo/sala_vencida", 0.0, 1.0, 0.0)
 	for caminho in portas:
 		var porta := get_node_or_null(caminho)
 		if porta and porta.has_method("liberar"):

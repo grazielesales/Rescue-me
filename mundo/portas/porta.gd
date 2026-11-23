@@ -32,9 +32,11 @@ func _on_body_entered(body):
 		return
 	if bloqueada:
 		Jogo.mostrar_mensagem("Trancada! Derrote todos os monstros da sala.", 1.5)
+		Som.tocar_em("mundo/porta_trancada", global_position)
 		return
 	if trancado:
 		Jogo.mostrar_mensagem(mensagem_trancada, 1.8)
+		Som.tocar_em("mundo/porta_trancada", global_position)
 		return
 	_abrir()
 
@@ -56,6 +58,8 @@ func liberar() -> void:
 
 
 func _abrir() -> void:
+	if not _aberta:
+		Som.tocar_em("mundo/porta_abrir", global_position)
 	_aberta = true
 	sprite.play("opening")
 	collision.set_deferred("disabled", true)
@@ -64,5 +68,6 @@ func _abrir() -> void:
 func _fechar() -> void:
 	if _aberta:
 		sprite.play("closing")
+		Som.tocar_em("mundo/porta_fechar", global_position)
 	_aberta = false
 	collision.set_deferred("disabled", false)

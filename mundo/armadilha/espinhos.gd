@@ -69,6 +69,8 @@ func _physics_process(delta: float) -> void:
 	_t += delta
 	var novo := _quadro_no_tempo(_t)
 	if novo != _quadro:
+		if novo == QUADRO_PERIGO and _quadro < novo:  # subindo
+			Som.tocar_em("mundo/espinhos", global_position + Vector2(tamanho * TILE) / 2.0, -4.0)
 		_quadro = novo
 		queue_redraw()
 	if _quadro < QUADRO_PERIGO:

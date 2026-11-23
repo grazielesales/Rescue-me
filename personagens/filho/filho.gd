@@ -84,6 +84,7 @@ func _soltar(silencioso: bool) -> void:
 		_luz.texture_scale = 1.6
 		queue_redraw()
 		return
+	Som.tocar_em("mundo/bolha_estoura", global_position + Vector2(0, -11))
 	var tw := create_tween().set_parallel()
 	tw.tween_property(self, "_bolha_escala", 1.8, 0.45).set_ease(Tween.EASE_OUT)
 	tw.tween_property(self, "_bolha_a", 0.0, 0.45)
@@ -139,6 +140,7 @@ func interagir() -> void:
 		return
 	_lendo = not _lendo
 	if _lendo:
+		Som.tocar("mundo/achado", 0.0, 0.8, 0.0)
 		Jogo.esconder_dica()
 		Jogo.mostrar_texto(texto_reencontro)
 	else:

@@ -51,6 +51,7 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	var passo := direcao * velocidade * delta
 	if _bate_em_solido(global_position, global_position + passo):
+		Som.tocar_em("inimigos/projetil_impacto", global_position)
 		queue_free()
 		return
 	position += passo
@@ -93,4 +94,5 @@ func _on_body_entered(body: Node) -> void:
 		body.levar_dano(dano, global_position - direcao * 8.0)
 		if apagar_luz > 0.0 and body.has_method("apagar_luz"):
 			body.apagar_luz(apagar_luz)
+	Som.tocar_em("inimigos/projetil_impacto", global_position)
 	queue_free()

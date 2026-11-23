@@ -55,6 +55,10 @@ const TEMPO_POSE := 0.1
 const INCLINACAO_LADO := 20.0
 ## Escala do ícone (igual à do sprite do Pai, para os pixels baterem).
 const ESCALA_ARMA := 0.5
+## Distância andada (px) entre um som de passo e outro; na escada, mais curta
+## (ele anda devagar subindo os degraus).
+const DISTANCIA_PASSO := 22.0
+const DISTANCIA_PASSO_ESCADA := 12.0
 
 var facing := "down"
 var vision_radius: float  ## raio atual da luz
@@ -74,6 +78,8 @@ var _arma_sprite: Sprite2D
 var _balanco: Tween
 var _balancando := false
 var _luz_tween: Tween
+var _passo_acumulado := 0.0
+var _pos_anterior := Vector2.INF
 
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var vision: PointLight2D = $Visao
@@ -99,6 +105,7 @@ func _physics_process(delta: float) -> void:
 		_arma_sprite.visible = sprite.visible
 	if morto:
 		return
+	_passos()  # antes do controle_externo: na escada ele também pisa
 	if controle_externo:
 		return
 	if Input.is_action_just_pressed("atacar"):
@@ -125,6 +132,21 @@ func _update_animation(dir: Vector2) -> void:
 	else:
 		sprite.play("idle_" + facing)
 	_posicionar_arma()
+
+
+## Som de passo a cada DISTANCIA_PASSO andados com a animação de andar
+## tocando (pelo controle ou levado pela escada). Pulos grandes de posição
+## (checkpoint, chegada pela escada) não contam.
+func _passos() -> void:
+	var andou := global_position.distance_to(_pos_anterior) if _pos_anterior != Vector2.INF else 0.0
+	_pos_anterior = global_position
+	if andou > 6.0 or not sprite.is_playing() or not String(sprite.animation).begins_with("walk_"):
+		return
+	_passo_acumulado += andou
+	var passo := DISTANCIA_PASSO_ESCADA if controle_externo else DISTANCIA_PASSO
+	if _passo_acumulado >= passo:
+		_passo_acumulado = fmod(_passo_acumulado, passo)
+		Som.tocar("pai/passo", -6.0, 1.0, 0.08)
 
 
 # --- API pública (inimigos, HUD, armas) --------------------------------------
@@ -167,6 +189,7 @@ func atacar(mira := Vector2.ZERO) -> void:
 		arma = arma.duplicate()
 		arma["choque"] = Itens.TEMPO_CHOQUE
 	_recarga = arma.recarga
+	Som.tocar("armas/" + Jogo.id_arma_atual())  # o golpe no ar; o acerto toca no alvo
 	var centro := global_position + _golpe.position
 	var dir := mira if mira != Vector2.ZERO else get_global_mouse_position() - centro
 	dir = dir.normalized() if dir.length() > 0.5 else _vetor_facing()
@@ -201,11 +224,14 @@ func levar_dano(qtd: int, origem: Vector2) -> void:
 	create_tween().tween_property(sprite, "modulate", Color.WHITE, 0.3)
 	if vida == 0:
 		_morrer()
+	else:
+		Som.tocar("pai/dano")
 
 
 func curar(qtd: int) -> void:
 	vida = mini(vida_maxima, vida + qtd)
 	vida_mudou.emit(vida, vida_maxima)
+	Som.tocar("pai/cura", 0.0, 1.0, 0.0)
 	sprite.modulate = Color(0.5, 1, 0.5)
 	create_tween().tween_property(sprite, "modulate", Color.WHITE, 0.4)
 
@@ -236,6 +262,7 @@ func luz_apagada() -> bool:
 
 func _morrer() -> void:
 	morto = true
+	Som.tocar("pai/morte", 0.0, 1.0, 0.0)
 	velocity = Vector2.ZERO
 	sprite.visible = true
 	sprite.play("idle_" + facing)

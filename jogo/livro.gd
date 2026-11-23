@@ -149,6 +149,7 @@ func _ready() -> void:
 func abrir(modo: String) -> void:
 	_modo = modo
 	_ajustar_escala()
+	Som.tocar("interface/livro_abrir", 0.0, 1.0, 0.0)
 	visible = true
 	get_tree().paused = true
 	Jogo.esconder_dica()
@@ -156,6 +157,8 @@ func abrir(modo: String) -> void:
 
 
 func fechar() -> void:
+	if visible:
+		Som.tocar("interface/livro_fechar", 0.0, 1.0, 0.0)
 	visible = false
 	get_tree().paused = false
 
@@ -182,8 +185,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event.is_action("ui_right"):
 		_mover_aba(1)
 	elif event.is_action("ui_accept"):
-		if _sel != "":
-			Jogo.criar(_sel)
+		if _sel != "" and not Jogo.criar(_sel):
+			Som.tocar("interface/erro", 0.0, 1.0, 0.0)
 	else:
 		return
 	get_viewport().set_input_as_handled()
@@ -408,7 +411,10 @@ func _mover(passo: int) -> void:
 	if _visiveis.is_empty():
 		return
 	var i := _visiveis.find(_sel)
-	_escolher(_visiveis[clampi(i + passo, 0, _visiveis.size() - 1)])
+	var novo: String = _visiveis[clampi(i + passo, 0, _visiveis.size() - 1)]
+	if novo != _sel:
+		Som.tocar("interface/mover", 0.0, 1.0, 0.0)
+	_escolher(novo)
 
 
 func _mover_aba(passo: int) -> void:
@@ -416,6 +422,7 @@ func _mover_aba(passo: int) -> void:
 	for k in ABAS.size():
 		if ABAS[k].id == _aba:
 			i = k
+	Som.tocar("interface/mover", 0.0, 0.85, 0.0)
 	_escolher_aba(ABAS[wrapi(i + passo, 0, ABAS.size())].id)
 
 

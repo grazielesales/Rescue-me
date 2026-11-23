@@ -69,6 +69,9 @@ func abrir() -> void:
 	_perto = false
 	Jogo.esconder_dica()
 	_mostrar(true)
+	Som.tocar_em("mundo/bau_abrir", global_position)
+	if flag_recompensa != "":
+		get_tree().create_timer(0.35).timeout.connect(Som.tocar.bind("mundo/achado", 0.0, 1.0, 0.0))
 	if flag_aberto != "":
 		Jogo.set_flag(flag_aberto, true)
 	if flag_recompensa != "":
