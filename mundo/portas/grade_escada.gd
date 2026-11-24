@@ -63,6 +63,7 @@ func _on_entrou(body: Node) -> void:
 		return
 	if trancado:
 		Jogo.mostrar_mensagem(mensagem_trancada, 2.5)
+		Som.tocar_em("mundo/porta_trancada", global_position)
 	elif _fechada and not _bloqueada:
 		_mudar(false)
 
@@ -88,6 +89,7 @@ func _mudar(fechar: bool, imediato := false) -> void:
 		_desce = alvo
 		queue_redraw()
 		return
+	Som.tocar_em("mundo/portao_fechar" if fechar else "mundo/portao_abrir", global_position)
 	var tw := create_tween()
 	tw.tween_method(func(v: float) -> void:
 		_desce = v

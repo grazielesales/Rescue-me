@@ -32,6 +32,7 @@ func _on_entrou(body: Node) -> void:
 	if _pega or not body.is_in_group("player"):
 		return
 	_pega = true
+	Som.tocar("mundo/chave", 0.0, 1.0, 0.0)
 	Jogo.set_flag(flag, true)
 	Jogo.salvar_progresso()
 	if mensagem != "":

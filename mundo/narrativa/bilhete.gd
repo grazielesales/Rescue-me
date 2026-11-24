@@ -45,6 +45,7 @@ func _on_saiu(body: Node) -> void:
 func _process(_delta: float) -> void:
 	if _perto and Input.is_action_just_pressed("interagir"):
 		_lendo = not _lendo
+		Som.tocar("mundo/bilhete", 0.0 if _lendo else -5.0)
 		if _lendo:
 			Jogo.esconder_dica()
 			Jogo.mostrar_texto(texto)

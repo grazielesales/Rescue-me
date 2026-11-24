@@ -27,7 +27,9 @@ func levar_dano(qtd: int, direcao: Vector2, _arma := {}) -> void:
 	tw.tween_property(alvo, "position", base + direcao * 2.0, 0.04)
 	tw.tween_property(alvo, "position", base, 0.06)
 	if vida > 0:
+		Som.tocar_em("mundo/caixa_bater", alvo.global_position)
 		return
+	Som.tocar_em("mundo/caixa_quebrar", alvo.global_position)
 	remove_from_group("atingiveis")
 	Jogo.registrar_morte(chave, "")
 	quebrou.emit()

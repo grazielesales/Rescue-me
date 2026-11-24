@@ -90,25 +90,27 @@ const RECEITAS := [
 ## - furia_vida (fração da vida), furia_velocidade, furia_recarga (multiplicadores):
 ##   abaixo de furia_vida o monstro fica mais rápido e deixa rastro de fogo;
 ## - rastro_intervalo (s entre chamas), rastro_duracao (s), rastro_dano.
+## - som: família dos sons em res://sons/inimigos (<som>_ataque, <som>_dano,
+##   <som>_morte). Sem o campo, ou sem algum dos arquivos, usa "generico".
 const INIMIGOS := {
-	"Aranha pequena": {"vida": 9, "dano": 1, "velocidade": 55.0, "alcance": 14.0, "recarga": 0.9, "drops": [["teia", 1, 1, 1.0], ["maca", 1, 1, 0.3]]},
-	"Aranha grande": {"vida": 8, "dano": 2, "velocidade": 40.0, "alcance": 20.0, "recarga": 1.2, "drops": [["teia", 1, 2, 1.0], ["presa", 1, 1, 0.75]]},
-	"Aranha-mãe": {"vida": 16, "dano": 2, "velocidade": 38.0, "alcance": 22.0, "recarga": 1.1, "drops": [["presa", 2, 2, 1.0], ["teia", 2, 3, 1.0]], "receita": "adaga"},
-	"Esqueleto": {"vida": 12, "dano": 2, "velocidade": 44.0, "alcance": 16.0, "recarga": 1.3, "drops": [["osso", 1, 2, 1.0], ["pocao_vida", 1, 1, 0.34]]},
-	"Zumbi": {"vida": 8, "dano": 2, "velocidade": 22.0, "alcance": 16.0, "recarga": 1.4, "drops": [["osso", 1, 1, 0.8], ["sucata", 1, 1, 0.5]]},
+	"Aranha pequena": {"som": "aranha", "vida": 9, "dano": 1, "velocidade": 55.0, "alcance": 14.0, "recarga": 0.9, "drops": [["teia", 1, 1, 1.0], ["maca", 1, 1, 0.3]]},
+	"Aranha grande": {"som": "aranha", "vida": 8, "dano": 2, "velocidade": 40.0, "alcance": 20.0, "recarga": 1.2, "drops": [["teia", 1, 2, 1.0], ["presa", 1, 1, 0.75]]},
+	"Aranha-mãe": {"som": "aranha", "vida": 16, "dano": 2, "velocidade": 38.0, "alcance": 22.0, "recarga": 1.1, "drops": [["presa", 2, 2, 1.0], ["teia", 2, 3, 1.0]], "receita": "adaga"},
+	"Esqueleto": {"som": "esqueleto", "vida": 12, "dano": 2, "velocidade": 44.0, "alcance": 16.0, "recarga": 1.3, "drops": [["osso", 1, 2, 1.0], ["pocao_vida", 1, 1, 0.34]]},
+	"Zumbi": {"som": "zumbi", "vida": 8, "dano": 2, "velocidade": 22.0, "alcance": 16.0, "recarga": 1.4, "drops": [["osso", 1, 1, 0.8], ["sucata", 1, 1, 0.5]]},
 	# 1º andar
-	"Olho maligno vermelho": {"vida": 3, "dano": 1, "velocidade": 0.0, "alcance": 110.0, "recarga": 2.2, "projetil": true, "velocidade_projetil": 45.0, "cor_projetil": Color(1.0, 0.35, 0.3), "fixo": true, "distancia_fechar": 28.0, "tempo_fechado": 2.5, "tempo_aberto": 1.5, "drops": [["po_magico", 1, 1, 1.0]]},
-	"Olho maligno azul": {"vida": 4, "dano": 1, "velocidade": 38.0, "alcance": 16.0, "recarga": 1.0, "drops": [["teia", 1, 1, 0.7]]},
+	"Olho maligno vermelho": {"som": "olho", "vida": 3, "dano": 1, "velocidade": 0.0, "alcance": 110.0, "recarga": 2.2, "projetil": true, "velocidade_projetil": 45.0, "cor_projetil": Color(1.0, 0.35, 0.3), "fixo": true, "distancia_fechar": 28.0, "tempo_fechado": 2.5, "tempo_aberto": 1.5, "drops": [["po_magico", 1, 1, 1.0]]},
+	"Olho maligno azul": {"som": "olho", "vida": 4, "dano": 1, "velocidade": 38.0, "alcance": 16.0, "recarga": 1.0, "drops": [["teia", 1, 1, 0.7]]},
 	# Sala Nordeste: a bruxa no lugar dos 3 olhos (solta o mesmo pó mágico que eles somados)
-	"Bruxa": {"vida": 12, "dano": 1, "velocidade": 30.0, "alcance": 120.0, "distancia": 64.0, "recarga": 1.6, "projetil": true, "velocidade_projetil": 75.0, "cor_projetil": Color(0.55, 1.0, 0.35), "drops": [["po_magico", 3, 3, 1.0], ["pocao_vida", 1, 1, 1.0]], "receita": "cajado_fogo"},
+	"Bruxa": {"som": "bruxa", "vida": 12, "dano": 1, "velocidade": 30.0, "alcance": 120.0, "distancia": 64.0, "recarga": 1.6, "projetil": true, "velocidade_projetil": 75.0, "cor_projetil": Color(0.55, 1.0, 0.35), "drops": [["po_magico", 3, 3, 1.0], ["pocao_vida", 1, 1, 1.0]], "receita": "cajado_fogo"},
 	# mini-chefe da arena Sudeste
-	"Chama sombria": {"vida": 18, "dano": 2, "velocidade": 28.0, "alcance": 110.0, "distancia": 60.0, "recarga": 1.8, "projetil": true, "velocidade_projetil": 90.0, "escala": 1.5, "apagar_luz": 3.0, "furia_vida": 0.5, "furia_velocidade": 1.6, "furia_recarga": 0.75, "rastro_intervalo": 0.3, "rastro_duracao": 3.0, "rastro_dano": 1, "drops": [["fragmento", 1, 1, 1.0]]},
+	"Chama sombria": {"som": "chama", "vida": 18, "dano": 2, "velocidade": 28.0, "alcance": 110.0, "distancia": 60.0, "recarga": 1.8, "projetil": true, "velocidade_projetil": 90.0, "escala": 1.5, "apagar_luz": 3.0, "furia_vida": 0.5, "furia_velocidade": 1.6, "furia_recarga": 0.75, "rastro_intervalo": 0.3, "rastro_duracao": 3.0, "rastro_dano": 1, "drops": [["fragmento", 1, 1, 1.0]]},
 	# mini-chefe do laboratório da Sala Sudeste (substituiu a Chama sombria): bate de perto; abaixo da metade fica furioso (sem rastro de fogo)
-	"Frankie": {"vida": 22, "dano": 2, "velocidade": 26.0, "alcance": 18.0, "recarga": 1.3, "furia_vida": 0.5, "furia_velocidade": 1.7, "furia_recarga": 0.7, "drops": [["fragmento", 1, 1, 1.0], ["sucata", 2, 2, 1.0], ["pocao_vida", 1, 1, 1.0]], "receita": "choque", "energia": ["energia_lab_1", "energia_lab_2"]},
-	"Fantasma": {"vida": 4, "dano": 1, "velocidade": 35.0, "alcance": 14.0, "recarga": 1.0, "drops": [["ectoplasma", 1, 1, 1.0]]},
-	"Criatura mágica": {"vida": 5, "dano": 1, "velocidade": 35.0, "alcance": 110.0, "distancia": 70.0, "recarga": 1.8, "projetil": true, "drops": [["po_magico", 1, 1, 1.0]], "receita": "tocha"},
-	"Demônio": {"vida": 10, "dano": 2, "velocidade": 45.0, "alcance": 18.0, "recarga": 1.1, "drops": [["fragmento", 1, 1, 0.7], ["osso", 1, 1, 0.4]]},
-	"Feiticeiro espectral": {"vida": 20, "dano": 2, "velocidade": 30.0, "alcance": 130.0, "distancia": 80.0, "recarga": 1.3, "projetil": true, "drops": [["po_magico", 2, 2, 1.0], ["ectoplasma", 2, 2, 1.0]], "receita": "espada"},
+	"Frankie": {"som": "frankie", "vida": 22, "dano": 2, "velocidade": 26.0, "alcance": 18.0, "recarga": 1.3, "furia_vida": 0.5, "furia_velocidade": 1.7, "furia_recarga": 0.7, "drops": [["fragmento", 1, 1, 1.0], ["sucata", 2, 2, 1.0], ["pocao_vida", 1, 1, 1.0]], "receita": "choque", "energia": ["energia_lab_1", "energia_lab_2"]},
+	"Fantasma": {"som": "fantasma", "vida": 4, "dano": 1, "velocidade": 35.0, "alcance": 14.0, "recarga": 1.0, "drops": [["ectoplasma", 1, 1, 1.0]]},
+	"Criatura mágica": {"som": "magico", "vida": 5, "dano": 1, "velocidade": 35.0, "alcance": 110.0, "distancia": 70.0, "recarga": 1.8, "projetil": true, "drops": [["po_magico", 1, 1, 1.0]], "receita": "tocha"},
+	"Demônio": {"som": "demonio", "vida": 10, "dano": 2, "velocidade": 45.0, "alcance": 18.0, "recarga": 1.1, "drops": [["fragmento", 1, 1, 0.7], ["osso", 1, 1, 0.4]]},
+	"Feiticeiro espectral": {"som": "feiticeiro", "vida": 20, "dano": 2, "velocidade": 30.0, "alcance": 130.0, "distancia": 80.0, "recarga": 1.3, "projetil": true, "drops": [["po_magico", 2, 2, 1.0], ["ectoplasma", 2, 2, 1.0]], "receita": "espada"},
 }
 const INIMIGO_PADRAO := {"vida": 4, "dano": 1, "velocidade": 30.0, "alcance": 16.0, "recarga": 1.2, "drops": []}
 

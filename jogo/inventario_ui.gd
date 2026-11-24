@@ -78,6 +78,7 @@ func _ready() -> void:
 
 
 func abrir() -> void:
+	Som.tocar("interface/inventario", 0.0, 1.0, 0.0)
 	visible = true
 	get_tree().paused = true
 	Jogo.esconder_dica()
@@ -87,6 +88,8 @@ func abrir() -> void:
 
 
 func fechar() -> void:
+	if visible:
+		Som.tocar("interface/inventario", 0.0, 0.85, 0.0)
 	visible = false
 	get_tree().paused = false
 
@@ -148,6 +151,7 @@ func _mover(dir: Vector2) -> void:
 			melhor_d = d
 			melhor = s
 	if melhor:
+		Som.tocar("interface/mover", 0.0, 1.0, 0.0)
 		_selecionar(melhor)
 
 
