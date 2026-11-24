@@ -36,6 +36,7 @@
 [ext_resource type="PackedScene" path="res://personagens/filho/filho.tscn" id="filho_cena"]
 [ext_resource type="Script" path="res://mundo/bruxaria/circulo_magico.gd" id="circulo_script"]
 [ext_resource type="PackedScene" path="res://inimigos/olho_azul.tscn" id="olho_azul_cena"]
+[ext_resource type="Texture2D" path="res://mundo/narrativa/desenho_grande.png" id="desenho_grande"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_bnrcu"]
 texture = ExtResource("2_wf3d3")
@@ -3085,6 +3086,7 @@ script = ExtResource("14_sn4ll")
 texto = "Um desenho de criança preso na parede: um homem grande, de azul, segurando a mão de um menino.
 
 Embaixo, com letra torta: MEU PAI VAI ME ACHAR."
+imagem = ExtResource("desenho_grande")
 
 [node name="relatorio 14" type="Sprite2D" parent="Props" unique_id=487134081]
 z_index = -1

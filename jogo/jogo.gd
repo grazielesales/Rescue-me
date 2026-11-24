@@ -71,7 +71,14 @@ var _msg_ate := 0
 var _dica: Label
 var _painel: PanelContainer
 var _texto: Label
+var _imagem: TextureRect
 var _trocando := false
+
+## Escala (inteira, pixels nítidos) da imagem mostrada junto com um texto.
+const ESCALA_IMAGEM_TEXTO := 4
+## Painel dos bilhetes: largura e margem interna (px da tela).
+const LARGURA_PAINEL := 420
+const MARGEM_PAINEL := 14
 
 
 func _ready() -> void:
@@ -93,19 +100,36 @@ func _ready() -> void:
 	estilo.bg_color = Color(0.08, 0.06, 0.05, 0.92)
 	estilo.border_color = Color(0.75, 0.66, 0.48)
 	estilo.set_border_width_all(2)
-	estilo.set_content_margin_all(14)
+	estilo.set_content_margin_all(MARGEM_PAINEL)
 	_painel.add_theme_stylebox_override("panel", estilo)
 	_painel.set_anchors_preset(Control.PRESET_CENTER)
-	_painel.custom_minimum_size = Vector2(420, 0)
+	_painel.custom_minimum_size = Vector2(LARGURA_PAINEL, 0)
 	_painel.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	_painel.grow_vertical = Control.GROW_DIRECTION_BOTH
 	_painel.visible = false
 	_painel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var coluna := VBoxContainer.new()
+	coluna.add_theme_constant_override("separation", 12)
+	coluna.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_painel.add_child(coluna)
+	# imagem opcional em cima do texto (ex.: o desenho do filho visto de perto)
+	_imagem = TextureRect.new()
+	_imagem.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_imagem.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_imagem.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	_imagem.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	_imagem.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_imagem.visible = false
+	coluna.add_child(_imagem)
 	_texto = Label.new()
 	_texto.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_texto.add_theme_font_size_override("font_size", 15)
 	_texto.add_theme_color_override("font_color", Color(0.93, 0.88, 0.76))
-	_painel.add_child(_texto)
+	# largura fixa: um Label com quebra de linha mede a altura pela largura
+	# atual; sem isso, na primeira vez ele mede com largura ~0 (uma letra por
+	# linha) e o painel fica imenso, empurrando a imagem para fora da tela
+	_texto.custom_minimum_size = Vector2(LARGURA_PAINEL - 2 * MARGEM_PAINEL, 0)
+	coluna.add_child(_texto)
 	add_child(_painel)
 
 	_estado_inicial()
@@ -736,9 +760,18 @@ func esconder_dica() -> void:
 
 
 ## Texto longo (bilhetes). Fica na tela até esconder_texto().
-func mostrar_texto(texto: String) -> void:
+## `imagem` (opcional) aparece em cima do texto, ampliada em pixels inteiros.
+func mostrar_texto(texto: String, imagem: Texture2D = null) -> void:
 	_texto.text = texto
+	_imagem.texture = imagem
+	_imagem.visible = imagem != null
+	if imagem:
+		_imagem.custom_minimum_size = imagem.get_size() * ESCALA_IMAGEM_TEXTO
 	_painel.visible = true
+	# encolhe para o tamanho do conteúdo (o próximo texto pode não ter imagem);
+	# de novo no fim do quadro, depois que os containers se arrumarem
+	_painel.reset_size()
+	_painel.call_deferred("reset_size")
 
 
 func esconder_texto() -> void:
