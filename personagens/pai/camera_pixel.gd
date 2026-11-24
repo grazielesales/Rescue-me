@@ -18,6 +18,8 @@ extends Camera2D
 var _alvo_local := Vector2.ZERO
 var _pos := Vector2.ZERO
 var _escala := 3.0  # pixels da tela por pixel do mundo
+var _tremor := 0.0  ## força atual do tremor (px do mundo); cai até 0
+var _tremor_queda := 0.0  ## quanto o tremor perde por segundo
 
 
 func _ready() -> void:
@@ -36,7 +38,17 @@ func _process(delta: float) -> void:
 		_pos = alvo
 	else:
 		_pos = _pos.lerp(alvo, 1.0 - exp(-suavidade * delta))
+	_tremor = maxf(0.0, _tremor - _tremor_queda * delta)
 	_aplicar()
+
+
+## Treme a câmera: `forca` em pixels do mundo, sumindo em `duracao` segundos.
+## Um tremor mais fraco não corta um mais forte que já está acontecendo.
+func tremer(forca: float, duracao: float) -> void:
+	if forca < _tremor:
+		return
+	_tremor = forca
+	_tremor_queda = forca / maxf(duracao, 0.01)
 
 
 func _alvo() -> Vector2:
@@ -45,7 +57,10 @@ func _alvo() -> Vector2:
 
 
 func _aplicar() -> void:
-	global_position = (_pos * _escala).round() / _escala
+	var tremor := Vector2.ZERO
+	if _tremor > 0.0:
+		tremor = Vector2(randf_range(-1.0, 1.0), randf_range(-1.0, 1.0)) * _tremor
+	global_position = ((_pos + tremor) * _escala).round() / _escala
 
 
 ## Com stretch "canvas_items", a tela é escalada por `fator`; o zoom total é
