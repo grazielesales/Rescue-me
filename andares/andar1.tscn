@@ -5462,6 +5462,7 @@ region_enabled = true
 region_rect = Rect2(322, 146, 12, 12)
 
 [node name="deco caveira aranha" type="Sprite2D" parent="Props" unique_id=1846234075]
+visible = false
 z_index = -1
 position = Vector2(266, -64)
 texture = ExtResource("5_880xg")

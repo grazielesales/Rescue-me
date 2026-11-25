@@ -9,7 +9,9 @@ extends Sprite2D
 ## (`camadas_de_parede`) para uma camada filha deste nó.
 
 ## Camadas de parede do andar, relativas ao nó raiz do andar.
-@export var camadas_de_parede: Array[String] = ["Map/wall", "wall2"]
+## "Map/topo das portas" (sem colisão, embaixo do arco) só existe no 2º andar; camada que falta é ignorada.
+## "wall2" pode estar na raiz do andar ou dentro de Map: as duas são procuradas.
+@export var camadas_de_parede: Array[String] = ["Map/wall", "Map/topo das portas", "wall2", "Map/wall2"]
 ## Quantas linhas de tile acima do arco são copiadas.
 @export var linhas_acima := 3
 ## Colunas extras copiadas de cada lado do vão de 2 tiles.

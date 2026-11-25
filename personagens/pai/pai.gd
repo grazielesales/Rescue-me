@@ -259,8 +259,10 @@ func atacar(mira := Vector2.ZERO) -> void:
 func levar_dano(qtd: int, origem: Vector2) -> void:
 	if morto or _invulneravel > 0.0 or _esquivando > 0.0 or controle_externo:
 		return
+	var perdeu := mini(qtd, vida)
 	vida = maxi(0, vida - qtd)
 	vida_mudou.emit(vida, vida_maxima)
+	Jogo.pai_levou_dano(perdeu)  # cada ponto de vida perdido apaga um pouco da luz do filho
 	_invulneravel = tempo_invulneravel
 	var recuo := (global_position - origem).normalized()
 	_empurrao = recuo * 150.0

@@ -3,8 +3,8 @@ extends CanvasLayer
 ## - canto superior esquerdo: vida em corações (cada coração = 2 de vida,
 ##   meio coração = 1). Pisca ao perder, "nasce" ao curar, brilha de vez em
 ##   quando e ganha um contorno piscando quando a vida está baixa;
-## - embaixo dos corações: a "luz do filho" (Jogo.luz_filho), uma barra com
-##   uma chaminha que vai se apagando até o filho ser libertado;
+## - canto superior direito, embaixo do andar: a "luz do filho" (Jogo.luz_filho), um orbe de vidro com
+##   luz de vela que baixa a cada dano no Pai, até o filho ser libertado;
 ## - canto superior direito: andar atual;
 ## - canto inferior esquerdo: plaquinha com a arma equipada e os slots dos
 ##   atalhos 1, 2 e 3, com a arte do Pixel UI Fantasy (a mesma do livro).
@@ -37,7 +37,7 @@ var _pai: Node
 var _canto_esq: Control
 var _vida := -1
 var _luz_titulo: Label
-var _luz_barra: BarraLuz
+var _luz_barra: OrbeLuz
 var _brilho_t := 2.0
 
 
@@ -100,13 +100,12 @@ func _ready() -> void:
 	Jogo.pai_registrado.connect(_on_pai)
 	Jogo.armas_mudou.connect(_atualizar_armas)
 	Jogo.andar_mudou.connect(func(n): _andar.text = n)
-	# luz do filho (embaixo dos corações e da dica)
-	_luz_titulo = _label("Luz do seu filho", 11, Color(COR_TEXTO, 0.8))
-	_luz_titulo.position = Vector2(16, 70)
-	_raiz.add_child(_luz_titulo)
-	_luz_barra = BarraLuz.new()
-	_luz_barra.position = Vector2(16, 88)
+	# luz do filho (canto superior direito, embaixo do nome do andar)
+	_luz_barra = OrbeLuz.new()
 	_raiz.add_child(_luz_barra)
+	_luz_titulo = _label("Luz do seu filho", 11, Color(COR_TEXTO, 0.8))
+	_luz_titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_raiz.add_child(_luz_titulo)
 
 	_atualizar_armas()
 	visible = false
@@ -119,6 +118,9 @@ func _process(delta: float) -> void:
 	var tela := get_viewport().get_visible_rect().size
 	_andar.size = _andar.get_minimum_size()
 	_andar.position = Vector2(tela.x - _andar.size.x - 16, 14)
+	_luz_barra.position = Vector2(tela.x - _luz_barra.size.x - 10, 38)
+	_luz_titulo.size = _luz_titulo.get_minimum_size()
+	_luz_titulo.position = Vector2(_luz_barra.position.x - _luz_titulo.size.x - 4, _luz_barra.position.y + (_luz_barra.size.y - _luz_titulo.size.y) / 2.0)
 	# maior escala inteira que cabe (igual ao livro): pixels nítidos
 	var e := maxf(1.0, floorf(minf(tela.x / TELA_UI.x, tela.y / TELA_UI.y)))
 	_canto_esq.scale = Vector2(e, e)
@@ -219,34 +221,41 @@ func _label(texto: String, tamanho: int, cor: Color) -> Label:
 	return l
 
 
-## Barra da luz do filho em pixel art (pixels de 3 px da tela): uma chaminha
-## que treme e diminui, e a barra com moldura da cor do HUD. A cor vai do
-## amarelo de vela ao vermelho-escuro; no fim a moldura pulsa em vermelho.
-class BarraLuz extends Control:
-	const PIXEL := 3.0
-	const CELULAS := 48  # largura do miolo da barra, em pixels de arte
-	const ALTURA := 3    # altura do miolo
-	const COR_CHEIA := Color(1.0, 0.86, 0.55)
-	const COR_MEIO := Color(0.95, 0.5, 0.18)
-	const COR_FIM := Color(0.6, 0.08, 0.08)
-	const COR_BORDA := Color(0.75, 0.66, 0.48)
-	const COR_FUNDO := Color(0.08, 0.06, 0.05, 0.85)
+## Luz do filho: um orbe de vidro (Pixel UI Fantasy, bars/orb_red + orb_glass)
+## cheio de luz de vela. O nível desce com a luz, a superfície treme como chama
+## e a cor vai do amarelo ao vermelho-escuro; no fim o vidro pulsa em vermelho.
+class OrbeLuz extends Control:
+	const ORBE := preload("res://addons/pixel_ui_fantasy/bars/orb_red.png")
+	const VIDRO := preload("res://addons/pixel_ui_fantasy/bars/orb_glass.png")
+	const ESCALA := 1.5
+	const COR_CHEIA := Color(1.0, 0.76, 0.3)
+	const COR_ARO := Color(0.55, 0.42, 0.24)
+	const COR_ARO_ESCURO := Color(0.2, 0.14, 0.09)
+	const COR_MEIO := Color(0.98, 0.5, 0.16)
+	const COR_FIM := Color(0.62, 0.08, 0.06)
+	static var _cinza: Texture2D  # o orbe em tons de cinza, para tingir com a cor da luz
 
 	var fracao := 1.0
 	var _t := 0.0
 
 	func _init() -> void:
-		# chama (5) + espaço (2) + moldura (1 + CELULAS + 1)
-		custom_minimum_size = Vector2(7 + CELULAS + 2, ALTURA + 4) * PIXEL
+		custom_minimum_size = Vector2(40, 40) * ESCALA
 		size = custom_minimum_size
 		mouse_filter = Control.MOUSE_FILTER_IGNORE
+		texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		if _cinza == null:
+			var img := ORBE.get_image()
+			img.convert(Image.FORMAT_RGBA8)
+			for y in img.get_height():
+				for x in img.get_width():
+					var c := img.get_pixel(x, y)
+					var v := clampf(c.r * 0.9 + 0.15, 0.0, 1.0)
+					img.set_pixel(x, y, Color(v, v, v, c.a))
+			_cinza = ImageTexture.create_from_image(img)
 
 	func _process(delta: float) -> void:
 		_t += delta
 		queue_redraw()
-
-	func _px(x: float, y: float, c: Color, l := 1.0, a := 1.0) -> void:
-		draw_rect(Rect2(Vector2(x, y) * PIXEL, Vector2(l, a) * PIXEL), c)
 
 	func _cor() -> Color:
 		if fracao > 0.5:
@@ -254,41 +263,46 @@ class BarraLuz extends Control:
 		return COR_FIM.lerp(COR_MEIO, fracao * 2.0)
 
 	func _draw() -> void:
-		var cor := _cor()
+		var e := ESCALA
+		var o := Vector2(4, 4) * e  # o orbe (32) fica no meio do vidro (40)
 		var fim := fracao <= 0.25
-		# tremor da luz: mais forte (e com "engasgos") quando está no fim
-		var tremor := 0.06 + (0.25 if fim else 0.0)
+		var tremor := 0.05 + (0.2 if fim else 0.0)
 		var brilho := 1.0 + tremor * sin(_t * 11.0) * sin(_t * 4.3)
-		if fim and sin(_t * 3.1) > 0.96:
-			brilho *= 0.5
-		var viva := Color(cor * brilho, 1.0)
-
-		# chaminha (5x7): encolhe com a luz, a ponta balança
-		var h := 2 + int(roundf(4.0 * fracao))
-		var ponta := roundf(sin(_t * 7.0) * 0.6)
-		for i in h:
-			var k := float(i) / maxf(1.0, h - 1)
-			var meia := 1 if k < 0.6 else 0
-			var y := ALTURA + 3 - 1 - i
-			var x := 2 + (ponta if k > 0.6 else 0.0)
-			_px(x - meia, y, Color(viva, 0.75), 1 + meia * 2)
-			if k < 0.5:
-				_px(x, y, Color(1, 0.97, 0.85, 0.9 * brilho))  # miolo claro
-		_px(2, ALTURA + 3, Color(0.3, 0.25, 0.2))  # pavio
-
-		# moldura e fundo
-		var x0 := 7.0
-		var borda := COR_BORDA
+		var centro := Vector2(20, 20) * e
+		# aro de metal em volta do vidro
+		draw_circle(centro, 17.5 * e, COR_ARO_ESCURO)
+		draw_circle(centro, 16.8 * e, COR_ARO)
+		draw_arc(centro, 16.8 * e, PI * 1.05, PI * 1.6, 12, Color(1, 0.9, 0.65, 0.6), 1.0 * e)
+		# fundo: o orbe vazio, quase preto
+		draw_texture_rect(_cinza, Rect2(o, Vector2(32, 32) * e), false, Color(0.13, 0.1, 0.09))
+		# a luz que resta, de baixo para cima, com a superfície ondulando 1 px
+		var f := clampf(fracao, 0.0, 1.0)
+		if f > 0.0:
+			var h := maxf(2.0, roundf(28.0 * f + sin(_t * 5.0) * 0.6)) + 2.0
+			h = minf(h, 32.0)
+			var cor := Color(_cor() * brilho, 1.0)
+			draw_texture_rect_region(_cinza, Rect2(o + Vector2(0, 32 - h) * e, Vector2(32, h) * e), Rect2(0, 32 - h, 32, h), cor)
+			# brilho mais forte no meio da luz
+			draw_circle(centro + Vector2(0, 4) * e, 7.0 * e * f, Color(1, 0.95, 0.75, 0.35 * brilho))
+			# linha clara na superfície
+			draw_texture_rect_region(_cinza, Rect2(o + Vector2(0, 32 - h) * e, Vector2(32, 1) * e), Rect2(0, 32 - h, 32, 1), Color(1, 0.97, 0.85, 0.55 * brilho))
+		# chaminha de vela no meio, que encolhe com a luz
+		if f > 0.0:
+			var px := e
+			var alt := 2 + int(roundf(5.0 * f))
+			var base := centro + Vector2(0, 6) * e
+			var balanco := roundf(sin(_t * 7.0) * 0.6)
+			for i in alt:
+				var k := float(i) / maxf(1.0, alt - 1)
+				var larg := 3.0 if k < 0.55 else 1.0
+				var x := base.x - larg * px * 0.5 + (balanco * px if k > 0.6 else 0.0)
+				draw_rect(Rect2(Vector2(x, base.y - (i + 1) * px), Vector2(larg * px, px)), Color(1, 0.98, 0.85, 0.95) if k < 0.45 else Color(1, 0.85, 0.4, 0.9))
+			draw_rect(Rect2(base + Vector2(-0.5, 0) * px, Vector2(px, px * 2)), Color(0.25, 0.2, 0.16))
+		# vidro e reflexo por cima; no fim pulsa em vermelho
+		var vidro := Color.WHITE
 		if fim:
-			borda = COR_BORDA.lerp(Color(0.85, 0.15, 0.1), 0.5 + 0.5 * sin(_t * 6.0))
-		_px(x0, 0, borda, CELULAS + 2, ALTURA + 4)
-		_px(x0 + 1, 1, COR_FUNDO, CELULAS, ALTURA + 2)
-		# luz que resta (arredonda para cima: só fica vazia quando acaba mesmo)
-		var cheias := ceili(CELULAS * clampf(fracao, 0.0, 1.0))
-		if cheias > 0:
-			_px(x0 + 1, 2, viva, cheias, ALTURA)
-			_px(x0 + 1, 2, Color(1, 1, 1, 0.18), cheias, 1)          # reflexo em cima
-			_px(x0 + cheias, 2, Color(1, 0.97, 0.85, brilho * 0.9), 1, ALTURA)  # brasa na ponta
+			vidro = Color.WHITE.lerp(Color(1, 0.35, 0.3), 0.5 + 0.5 * sin(_t * 6.0))
+		draw_texture_rect(VIDRO, Rect2(Vector2.ZERO, Vector2(40, 40) * e), false, vidro)
 
 
 ## Um ícone da pasta "HUD Containers" (coração, gota, contorno).

@@ -7,23 +7,23 @@
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_portao0"]
 atlas = ExtResource("2_tex")
-region = Rect2(0, 0, 32, 48)
+region = Rect2(0, 16, 32, 32)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_portao1"]
 atlas = ExtResource("2_tex")
-region = Rect2(0, 48, 32, 48)
+region = Rect2(0, 64, 32, 32)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_portao2"]
 atlas = ExtResource("2_tex")
-region = Rect2(0, 96, 32, 48)
+region = Rect2(0, 112, 32, 32)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_portao3"]
 atlas = ExtResource("2_tex")
-region = Rect2(0, 144, 32, 48)
+region = Rect2(0, 160, 32, 32)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_portao4"]
 atlas = ExtResource("2_tex")
-region = Rect2(0, 192, 32, 48)
+region = Rect2(0, 208, 32, 32)
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_portao"]
 animations = [{
@@ -82,14 +82,17 @@ size = Vector2(34, 27.25)
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_area"]
 size = Vector2(60, 60)
 
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_lados"]
+size = Vector2(6, 48)
+
 [node name="portao" type="StaticBody2D"]
 y_sort_enabled = true
 script = ExtResource("1_door")
-editor_description = "Origem = centro do sprite 32x48. Para um vão de 2 tiles nas colunas X e X+1 com o arco na linha L: posição = (X*16+16, L*16+19)."
+editor_description = "Origem = centro do sprite 32x48 (o quadro é recortado sem a alavanca que vinha desenhada em cima do arco, por isso o sprite fica 8 px abaixo). Para um vão de 2 tiles nas colunas X e X+1 com o arco na linha L: posição = (X*16+16, L*16+19)."
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 z_index = -1
-position = Vector2(0, 0)
+position = Vector2(0, 8)
 sprite_frames = SubResource("SpriteFrames_portao")
 animation = &"closing"
 frame = 4
@@ -111,3 +114,12 @@ shape = SubResource("RectangleShape2D_bloqueio")
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D"]
 position = Vector2(0, 10)
 shape = SubResource("RectangleShape2D_area")
+
+[node name="LadoEsquerdo" type="CollisionShape2D" parent="."]
+editor_description = "Pedras do arco: o vão de 2 tiles fica do tamanho da abertura desenhada (x -10 a 10)."
+position = Vector2(-13, 5)
+shape = SubResource("RectangleShape2D_lados")
+
+[node name="LadoDireito" type="CollisionShape2D" parent="."]
+position = Vector2(13, 5)
+shape = SubResource("RectangleShape2D_lados")

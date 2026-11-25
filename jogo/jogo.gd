@@ -50,26 +50,24 @@ var _proximo_drop := 0
 var flags := {}
 
 # --- luz do filho -------------------------------------------------------------------
-## A luz do filho (preso com o chefe) vai se apagando enquanto se joga. Se
-## chegar a zero antes de ele ser libertado, o filho não pôde ser salvo e o
-## jogo recomeça do zero (tela de fim_filho.gd + música triste).
-## Segundos de jogo até apagar (10 min). Não conta com o livro/inventário
-## abertos, nas trocas de andar nem enquanto o Pai está caído.
+## A luz do filho (preso com o chefe) só se apaga quando o Pai se machuca:
+## cada ponto de vida perdido apaga PERDA_LUZ_POR_DANO da luz. Se chegar a zero
+## antes de ele ser libertado, o filho não pôde ser salvo e o jogo recomeça do
+## zero (tela de fim_filho.gd + música triste).
+## Luz cheia (a escala ficou em "segundos" por causa do save antigo).
 const TEMPO_LUZ_FILHO := 600.0
+## Fração da luz que cada ponto de dano no Pai apaga (0.04 = 25 pontos de dano até apagar).
+const PERDA_LUZ_POR_DANO := 0.04
 ## Marca de quando a bolha estoura (o chefe caiu): a luz para de cair.
 const FLAG_FILHO_LIVRE := "filho_libertado"
 ## Avisos quando a luz passa dessas frações.
 const AVISOS_LUZ_FILHO := [
 	[0.5, "A luz do seu filho está enfraquecendo..."],
-	[0.25, "A luz do seu filho treme. Ele não vai aguentar muito tempo."],
-	[0.1, "A luz do seu filho é só uma faísca. Corra!"],
+	[0.25, "A luz do seu filho treme. Cada ferida sua apaga um pouco mais."],
+	[0.1, "A luz do seu filho é só uma faísca. Não se machuque!"],
 ]
-## A cada quantos segundos de luz gasta o save é gravado (para fechar o jogo
-## à força não devolver o tempo).
-const SALVAR_LUZ_A_CADA := 30.0
 ## Segundos de luz que ainda restam.
 var luz_filho := TEMPO_LUZ_FILHO
-var _luz_desde_save := 0.0
 var _fim_filho := false
 var _tela_fim: CanvasLayer
 
@@ -344,7 +342,6 @@ func _estado_inicial() -> void:
 	_proximo_drop = 0
 	flags = {}
 	luz_filho = TEMPO_LUZ_FILHO
-	_luz_desde_save = 0.0
 
 
 func tem_save() -> bool:
@@ -758,8 +755,9 @@ func fade(alvo: float, tempo: float) -> void:
 
 # --- luz do filho ------------------------------------------------------------------
 
-func _process(delta: float) -> void:
-	_gastar_luz_filho(delta)
+## Chamado pelo pai.gd quando ele perde vida: apaga um pedaço da luz.
+func pai_levou_dano(qtd: int) -> void:
+	_gastar_luz_filho(TEMPO_LUZ_FILHO * PERDA_LUZ_POR_DANO * qtd)
 
 
 ## 1 = luz cheia, 0 = apagada.
@@ -780,21 +778,16 @@ func libertar_filho() -> void:
 	salvar_progresso()
 
 
-func _gastar_luz_filho(delta: float) -> void:
-	if _fim_filho or filho_livre():
-		return
-	if not _pai_ativo() or _morrendo or _trocando or get_tree().paused:
+func _gastar_luz_filho(quanto: float) -> void:
+	if _fim_filho or filho_livre() or quanto <= 0.0:
 		return
 	var antes := fracao_luz_filho()
-	luz_filho = maxf(0.0, luz_filho - delta)
+	luz_filho = maxf(0.0, luz_filho - quanto)
 	var agora := fracao_luz_filho()
 	for aviso in AVISOS_LUZ_FILHO:
 		if antes > aviso[0] and agora <= aviso[0]:
 			mostrar_mensagem(aviso[1], 3.5, true)
-	_luz_desde_save += delta
-	if _luz_desde_save >= SALVAR_LUZ_A_CADA:
-		_luz_desde_save = 0.0
-		salvar_progresso()
+	salvar_progresso()
 	if luz_filho <= 0.0:
 		_luz_filho_apagou()
 
