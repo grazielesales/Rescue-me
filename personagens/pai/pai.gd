@@ -69,6 +69,11 @@ const AVANCO_ATAQUE := 2.0
 const INCLINACAO_DANO := 12.0
 const TREMOR_DANO := 2.0
 const TREMOR_ACERTO := 0.8
+## Esquiva (GDD 3.2 e 3.4): rolamento curto com invulnerabilidade, na direção
+## do movimento (ou para onde ele olha), com recarga antes da próxima.
+const DURACAO_ESQUIVA := 0.25
+const VELOCIDADE_ESQUIVA := 230.0
+const RECARGA_ESQUIVA := 0.8
 
 var facing := "down"
 var vision_radius: float  ## raio atual da luz
@@ -80,6 +85,9 @@ var vida := 0
 var morto := false
 
 var _recarga := 0.0
+var _recarga_esquiva := 0.0
+var _esquivando := 0.0  ## tempo restante do rolamento (> 0 = rolando)
+var _dir_esquiva := Vector2.ZERO
 var _invulneravel := 0.0
 var _empurrao := Vector2.ZERO
 var _golpe: Golpe
@@ -120,6 +128,7 @@ func _ready() -> void:
 
 func _physics_process(delta: float) -> void:
 	_recarga = maxf(0.0, _recarga - delta)
+	_recarga_esquiva = maxf(0.0, _recarga_esquiva - delta)
 	if _invulneravel > 0.0:
 		_invulneravel -= delta
 		sprite.visible = _invulneravel <= 0.0 or int(_invulneravel * 14.0) % 2 == 0
@@ -128,6 +137,14 @@ func _physics_process(delta: float) -> void:
 		return
 	_passos()  # antes do controle_externo: na escada ele também pisa
 	if controle_externo:
+		return
+	if _esquivando > 0.0:
+		_esquivando -= delta
+		velocity = _dir_esquiva * VELOCIDADE_ESQUIVA
+		move_and_slide()
+		return
+	if Input.is_action_just_pressed("esquivar") and _recarga_esquiva <= 0.0:
+		_iniciar_esquiva()
 		return
 	if Input.is_action_just_pressed("atacar"):
 		atacar()
@@ -240,7 +257,7 @@ func atacar(mira := Vector2.ZERO) -> void:
 
 ## Dano vindo de um monstro. `origem` = de onde veio o golpe (empurra o Pai).
 func levar_dano(qtd: int, origem: Vector2) -> void:
-	if morto or _invulneravel > 0.0 or controle_externo:
+	if morto or _invulneravel > 0.0 or _esquivando > 0.0 or controle_externo:
 		return
 	vida = maxi(0, vida - qtd)
 	vida_mudou.emit(vida, vida_maxima)
@@ -305,6 +322,16 @@ func _morrer(recuo := Vector2.ZERO) -> void:
 	_animar_morte(recuo)
 	morreu.emit()
 	Jogo.pai_morreu()
+
+
+## Começa o rolamento: enquanto `_esquivando` > 0 o Pai é invulnerável e não ataca.
+## Sem direção apertada, rola para onde está olhando.
+func _iniciar_esquiva() -> void:
+	var dir := Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
+	_dir_esquiva = dir.normalized() if dir != Vector2.ZERO else _vetor_facing()
+	_esquivando = DURACAO_ESQUIVA
+	_recarga_esquiva = RECARGA_ESQUIVA
+	Som.tocar("pai/passo", -3.0, 1.2, 0.0)
 
 
 func _vetor_facing() -> Vector2:
