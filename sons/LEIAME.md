@@ -13,6 +13,10 @@ monstro acordado (ou numa arena trancada) e sai uns segundos depois que a sala
 esvazia. O `andar.gd` escolhe a música pelo nome da cena (`andar1` →
 `andar1_*.wav`); para outro nome, preencha `musica` no nó raiz do andar.
 
+`musica/filho_perdido.wav`: lamento de ~30 s, sem laço, que toca uma vez
+quando a luz do filho apaga (`Musica.tocar_lamento()`, chamado pelo `Jogo`).
+Caixinha de música em ré menor que vai perdendo a corda.
+
 Para trocar por músicas de verdade: grave os dois arquivos com o mesmo tamanho
 e o laço marcado (ou marque *Loop Mode: Forward* na importação do Godot).
 

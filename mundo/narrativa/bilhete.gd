@@ -9,6 +9,9 @@ extends Sprite2D
 @export var receita := ""
 ## Texto da dica que aparece perto (ex.: "E: olhar" para um monitor).
 @export var dica := "E: ler"
+## Imagem mostrada em cima do texto ao ler (ex.: o desenho visto de perto).
+## Vazio = só o texto.
+@export var imagem: Texture2D
 
 var _perto := false
 var _lendo := false
@@ -48,7 +51,7 @@ func _process(_delta: float) -> void:
 		Som.tocar("mundo/bilhete", 0.0 if _lendo else -5.0)
 		if _lendo:
 			Jogo.esconder_dica()
-			Jogo.mostrar_texto(texto)
+			Jogo.mostrar_texto(texto, imagem)
 			if receita != "":
 				Jogo.aprender_receita(receita)
 		else:

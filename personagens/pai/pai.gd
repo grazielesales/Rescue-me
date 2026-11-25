@@ -59,6 +59,16 @@ const ESCALA_ARMA := 0.5
 ## (ele anda devagar subindo os degraus).
 const DISTANCIA_PASSO := 22.0
 const DISTANCIA_PASSO_ESCADA := 12.0
+## Altura do sprite em pixels do mundo (64 px da folha x escala 0.5). O sprite
+## é deslocado para girar/esticar a partir dos PÉS (squash e queda na morte).
+const ALTURA_SPRITE := 32.0
+## Golpe: o corpo recua (preparo) e avança (golpe) esses pixels na direção do ataque.
+const RECUO_ATAQUE := 1.0
+const AVANCO_ATAQUE := 2.0
+## Dano: quanto o corpo inclina para longe do golpe (graus) e o tremor da câmera.
+const INCLINACAO_DANO := 12.0
+const TREMOR_DANO := 2.0
+const TREMOR_ACERTO := 0.8
 
 var facing := "down"
 var vision_radius: float  ## raio atual da luz
@@ -78,16 +88,27 @@ var _arma_sprite: Sprite2D
 var _balanco: Tween
 var _balancando := false
 var _luz_tween: Tween
+var _corpo_tween: Tween  ## squash/stretch, inclinação e queda do sprite
+var _cor_tween: Tween  ## flashes de cor (dano, cura, morte)
+var _escala_sprite := Vector2.ONE  ## escala original do sprite (0.5)
+var _pos_sprite := Vector2.ZERO  ## posição de repouso do sprite (nos pés)
 var _passo_acumulado := 0.0
 var _pos_anterior := Vector2.INF
 
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var vision: PointLight2D = $Visao
+@onready var camera: Camera2D = get_node_or_null("Camera2D")
 
 
 func _ready() -> void:
 	add_to_group("player")  # as portas (door.gd) procuram esse grupo
 	vida = vida_maxima
+	# pivô do sprite nos pés: mesma imagem no mesmo lugar, mas escala e rotação
+	# agora partem do chão (o offset é em pixels da folha, antes da escala)
+	_escala_sprite = sprite.scale
+	sprite.position.y += ALTURA_SPRITE * 0.5
+	sprite.offset.y -= ALTURA_SPRITE * 0.5 / _escala_sprite.y
+	_pos_sprite = sprite.position
 	_golpe = Golpe.new()
 	_golpe.position = Vector2(0, -8)
 	add_child(_golpe)
@@ -197,6 +218,8 @@ func atacar(mira := Vector2.ZERO) -> void:
 	_golpe.scale.y = _sentido_golpe(dir)  # o arco gira no mesmo sentido da arma
 	_golpe.mostrar(dir, arma)
 	_balancar_arma(dir, arma)
+	_animar_corpo_ataque(dir)
+	var acertou := false
 	for alvo in get_tree().get_nodes_in_group("atingiveis"):
 		if not is_instance_valid(alvo):
 			continue
@@ -210,6 +233,9 @@ func atacar(mira := Vector2.ZERO) -> void:
 			continue
 		var dano: int = arma.dano + arma.get("bonus", {}).get(alvo.get("tipo"), 0)
 		alvo.levar_dano(dano, dir, arma)
+		acertou = true
+	if acertou:
+		_tremer(TREMOR_ACERTO, 0.12)  # um "peso" leve quando o golpe pega
 
 
 ## Dano vindo de um monstro. `origem` = de onde veio o golpe (empurra o Pai).
@@ -219,21 +245,22 @@ func levar_dano(qtd: int, origem: Vector2) -> void:
 	vida = maxi(0, vida - qtd)
 	vida_mudou.emit(vida, vida_maxima)
 	_invulneravel = tempo_invulneravel
-	_empurrao = (global_position - origem).normalized() * 150.0
-	sprite.modulate = Color(1, 0.35, 0.35)
-	create_tween().tween_property(sprite, "modulate", Color.WHITE, 0.3)
+	var recuo := (global_position - origem).normalized()
+	_empurrao = recuo * 150.0
 	if vida == 0:
-		_morrer()
-	else:
-		Som.tocar("pai/dano")
+		_morrer(recuo)
+		return
+	Som.tocar("pai/dano")
+	_animar_dano(recuo)
 
 
 func curar(qtd: int) -> void:
 	vida = mini(vida_maxima, vida + qtd)
 	vida_mudou.emit(vida, vida_maxima)
 	Som.tocar("pai/cura", 0.0, 1.0, 0.0)
+	_novo_tween_cor()
 	sprite.modulate = Color(0.5, 1, 0.5)
-	create_tween().tween_property(sprite, "modulate", Color.WHITE, 0.4)
+	_cor_tween.tween_property(sprite, "modulate", Color.WHITE, 0.4)
 
 
 ## Reaplica melhorias criadas no livro e acerta a luz
@@ -260,17 +287,22 @@ func luz_apagada() -> bool:
 	return _luz_tween != null and _luz_tween.is_running()
 
 
-func _morrer() -> void:
+## `recuo` = direção para onde o golpe final empurrou o Pai (ele cai para lá).
+func _morrer(recuo := Vector2.ZERO) -> void:
 	morto = true
 	Som.tocar("pai/morte", 0.0, 1.0, 0.0)
 	velocity = Vector2.ZERO
+	_empurrao = Vector2.ZERO
+	_invulneravel = 0.0  # para o pisca-pisca não esconder o corpo caindo
 	sprite.visible = true
+	_arma_sprite.visible = true
+	if _balanco:
+		_balanco.kill()
+	_balancando = false
 	sprite.play("idle_" + facing)
-	_arma.visible = false
-	var tw := create_tween()
-	tw.tween_property(sprite, "modulate", Color(0.6, 0.15, 0.15), 0.4)
-	tw.parallel().tween_property(sprite, "rotation", deg_to_rad(90), 0.4)
+	sprite.pause()
 	set_colisao(false)
+	_animar_morte(recuo)
 	morreu.emit()
 	Jogo.pai_morreu()
 
@@ -294,10 +326,21 @@ func _olhar_para(dir: Vector2) -> void:
 	_posicionar_arma()
 
 
-## Arco do golpe desenhado na direção do ataque.
+## Arco do golpe desenhado na direção do ataque: um rastro que afina na cauda
+## e engrossa na ponta (que acompanha a arma), e depois se fecha em direção à
+## ponta até sumir.
 class Golpe extends Node2D:
+	const DURACAO := 0.22
+	## Espera o preparo do braço antes de começar a varrer.
+	const ATRASO := 0.03
+	## Tempo que a ponta leva para ir de um lado do arco ao outro.
+	const VARREDURA := 0.09
+	## Comprimento do rastro durante a varredura (fração do arco).
+	const RASTRO := 0.8
+	const SEGMENTOS := 14
+
 	var _t := 0.0
-	var _dur := 0.14
+	var _ativo := false
 	var _raio := 20.0
 	var _ang := 70.0
 	var _cor := Color.WHITE
@@ -311,24 +354,77 @@ class Golpe extends Node2D:
 		_raio = arma.alcance
 		_ang = minf(arma.angulo, 85.0)
 		_cor = arma.get("cor", Color.WHITE)
-		_t = _dur
+		_t = 0.0
+		_ativo = true
 		visible = true
 		queue_redraw()
 
 	func _process(delta: float) -> void:
-		if _t <= 0.0:
+		if not _ativo:
 			return
-		_t -= delta
-		if _t <= 0.0:
+		_t += delta
+		if _t >= DURACAO:
+			_ativo = false
 			visible = false
 		queue_redraw()
 
 	func _draw() -> void:
-		var p := 1.0 - _t / _dur  # 0 -> 1 ao longo do golpe
+		# ponta: 0 -> 1 ao longo do arco, com aceleração no começo (golpe forte)
+		var cabeca := clampf((_t - ATRASO) / VARREDURA, 0.0, 1.0)
+		if cabeca <= 0.0:
+			return
+		cabeca = 1.0 - pow(1.0 - cabeca, 2.0)
+		# depois da varredura, a cauda alcança a ponta e o rastro some
+		var sumir := clampf((_t - ATRASO - VARREDURA) / (DURACAO - ATRASO - VARREDURA), 0.0, 1.0)
+		var cauda := maxf(0.0, cabeca - RASTRO)
+		cauda = lerpf(cauda, 1.0, sumir)
+		if cabeca - cauda <= 0.01:
+			return
 		var a := deg_to_rad(_ang)
-		var c := Color(_cor, 0.9 * (1.0 - p * 0.7))
-		draw_arc(Vector2.ZERO, _raio * 0.85, -a, -a + 2.0 * a * minf(1.0, p * 2.0), 14, c, 3.0)
-		draw_arc(Vector2.ZERO, _raio * 0.6, -a, -a + 2.0 * a * minf(1.0, p * 2.0), 10, Color(c, c.a * 0.5), 1.5)
+		var r_fora := _raio * 0.85
+		var r_dentro := _raio * 0.6
+		var alfa := 1.0 - sumir * 0.5
+		for i in SEGMENTOS:
+			var k0 := float(i) / SEGMENTOS
+			var k1 := float(i + 1) / SEGMENTOS
+			var ang0 := -a + 2.0 * a * lerpf(cauda, cabeca, k0)
+			var ang1 := -a + 2.0 * a * lerpf(cauda, cabeca, k1)
+			var c := Color(_cor, 0.9 * k1 * alfa)  # some na cauda
+			var d0 := Vector2.from_angle(ang0)
+			var d1 := Vector2.from_angle(ang1)
+			draw_line(d0 * r_fora, d1 * r_fora, c, lerpf(0.5, 3.0, k1))
+			draw_line(d0 * r_dentro, d1 * r_dentro, Color(c, c.a * 0.45), lerpf(0.5, 1.5, k1))
+		# brilho na ponta enquanto a arma ainda está varrendo
+		if sumir < 1.0:
+			var ponta := Vector2.from_angle(-a + 2.0 * a * cabeca) * r_fora
+			draw_circle(ponta, 1.5, Color(Color.WHITE, 0.9 * (1.0 - sumir)))
+
+
+## Nuvem de poeira quando o corpo bate no chão.
+class Poeira extends Node2D:
+	const DURACAO := 0.45
+	var _t := 0.0
+	var _bolhas: Array[Vector3] = []  ## (x, y, raio) de cada bolinha
+
+	func _ready() -> void:
+		z_index = 1
+		for i in 5:
+			_bolhas.append(Vector3(randf_range(-6.0, 6.0), randf_range(-2.0, 1.0), randf_range(1.5, 2.8)))
+
+	func _process(delta: float) -> void:
+		_t += delta
+		if _t >= DURACAO:
+			queue_free()
+			return
+		queue_redraw()
+
+	func _draw() -> void:
+		var p := _t / DURACAO
+		var c := Color(0.72, 0.66, 0.58, 0.55 * (1.0 - p))
+		for b in _bolhas:
+			# espalha para os lados e sobe um pouco, crescendo
+			var pos := Vector2(b.x * (1.0 + p * 1.2), b.y - p * 4.0)
+			draw_circle(pos, b.z * (0.6 + p * 0.8), c)
 
 
 # --- interno -------------------------------------------------------------------
@@ -410,8 +506,10 @@ func _balancar_arma(dir: Vector2, arma: Dictionary) -> void:
 	sprite.play(anim)
 	sprite.pause()
 	sprite.frame = quadros[0]
-	var mao_tras := _mao(anim, quadros[0])
+	# a mão acompanha o corpo, que recua no preparo e avança no golpe
+	var mao_tras := _mao(anim, quadros[0]) - (dir * RECUO_ATAQUE).round()
 	var mao_frente := _mao(anim, quadros[1])
+	var mao_avanco := mao_frente + (dir * AVANCO_ATAQUE).round()
 	# o ícone aponta a -45°; somando 45° a ponta fica na direção do golpe
 	var base := dir.angle() + PI / 4.0
 	# sentido do giro: para a esquerda inverte, para o golpe sempre vir de cima
@@ -426,9 +524,143 @@ func _balancar_arma(dir: Vector2, arma: Dictionary) -> void:
 	# golpe: troca para o quadro do braço à frente e gira a arma
 	_balanco.tween_callback(func(): sprite.frame = quadros[1])
 	_balanco.tween_property(_arma, "rotation", base + a, TEMPO_GOLPE).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	_balanco.parallel().tween_property(_arma, "position", mao_frente, TEMPO_GOLPE * 0.5)
-	_balanco.tween_interval(TEMPO_POSE)
+	_balanco.parallel().tween_property(_arma, "position", mao_avanco, TEMPO_GOLPE * 0.5)
+	# pose: o corpo volta do avanço e a mão vem junto
+	_balanco.tween_property(_arma, "position", mao_frente, TEMPO_POSE).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	_balanco.tween_callback(func():
 		_balancando = false
 		sprite.play("idle_" + facing)
 		_posicionar_arma())
+
+
+# --- animações do corpo (ataque, dano, morte) -------------------------------------
+
+func _novo_tween_corpo() -> Tween:
+	if _corpo_tween:
+		_corpo_tween.kill()
+	_corpo_tween = create_tween()
+	return _corpo_tween
+
+
+func _novo_tween_cor() -> Tween:
+	if _cor_tween:
+		_cor_tween.kill()
+	_cor_tween = create_tween()
+	return _cor_tween
+
+
+func _tremer(forca: float, duracao: float) -> void:
+	if camera and camera.has_method("tremer"):
+		camera.call("tremer", forca, duracao)
+
+
+## Golpe: o corpo se encolhe e recua no preparo, estica e dá um passinho na
+## direção do ataque no golpe e volta ao normal na pose final. Mesmos tempos
+## do balanço da arma, para os dois baterem.
+func _animar_corpo_ataque(dir: Vector2) -> void:
+	var t := _novo_tween_corpo()
+	var s := _escala_sprite
+	var de_lado := absf(dir.x) > absf(dir.y)
+	# de lado o corpo estica na horizontal; para cima/baixo, na vertical
+	var esticado := Vector2(1.08, 0.95) if de_lado else Vector2(0.95, 1.07)
+	sprite.rotation = 0.0
+	# preparo
+	t.tween_property(sprite, "scale", s * Vector2(1.07, 0.92), TEMPO_PREPARO)
+	t.parallel().tween_property(sprite, "position", _pos_sprite - (dir * RECUO_ATAQUE).round(), TEMPO_PREPARO)
+	# golpe
+	t.tween_property(sprite, "scale", s * esticado, TEMPO_GOLPE * 0.5).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	t.parallel().tween_property(sprite, "position", _pos_sprite + (dir * AVANCO_ATAQUE).round(), TEMPO_GOLPE * 0.5).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	t.tween_interval(TEMPO_GOLPE * 0.5)
+	# volta (com um leve "quique" no fim)
+	t.tween_property(sprite, "scale", s, TEMPO_POSE).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	t.parallel().tween_property(sprite, "position", _pos_sprite, TEMPO_POSE).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+
+
+## Levou um golpe: flash branco rápido, depois vermelho que some; o corpo
+## achata e inclina para longe do golpe e volta com um pequeno balanço.
+func _animar_dano(recuo: Vector2) -> void:
+	_novo_tween_cor()
+	sprite.modulate = Color(2.2, 2.2, 2.2)
+	_cor_tween.tween_interval(0.05)
+	_cor_tween.tween_callback(func(): sprite.modulate = Color(1, 0.3, 0.3))
+	_cor_tween.tween_property(sprite, "modulate", Color.WHITE, 0.35)
+
+	var lado := signf(recuo.x) if absf(recuo.x) > 0.2 else 0.0
+	var t := _novo_tween_corpo()
+	sprite.scale = _escala_sprite * Vector2(1.14, 0.86)
+	sprite.rotation = deg_to_rad(INCLINACAO_DANO) * lado
+	sprite.position = _pos_sprite
+	t.tween_property(sprite, "scale", _escala_sprite, 0.28).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	t.parallel().tween_property(sprite, "rotation", 0.0, 0.32).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	_tremer(TREMOR_DANO, 0.2)
+
+
+## Morte: o golpe final empurra o corpo, ele cambaleia, os joelhos cedem e ele
+## tomba para o lado do empurrão (girando a partir dos pés), quica de leve no
+## chão levantando poeira. A arma escapa da mão e cai do outro lado.
+## Tudo cabe nos ~1,6 s que o Jogo espera antes do fade.
+func _animar_morte(recuo: Vector2) -> void:
+	var lado := signf(recuo.x) if absf(recuo.x) > 0.2 else (-1.0 if sprite.flip_h else 1.0)
+	var s := _escala_sprite
+	var queda := deg_to_rad(90.0) * lado
+
+	# cor: flash branco, vermelho, e escurece enquanto cai
+	_novo_tween_cor()
+	sprite.modulate = Color(2.4, 2.4, 2.4)
+	_cor_tween.tween_interval(0.06)
+	_cor_tween.tween_callback(func(): sprite.modulate = Color(1, 0.3, 0.3))
+	_cor_tween.tween_property(sprite, "modulate", Color(0.6, 0.18, 0.18), 0.7)
+	_cor_tween.tween_property(sprite, "modulate", Color(0.5, 0.2, 0.2, 0.92), 0.5)
+
+	var t := _novo_tween_corpo()
+	sprite.position = _pos_sprite
+	# 1. impacto: achata e é jogado para trás
+	sprite.scale = s * Vector2(1.16, 0.84)
+	sprite.rotation = deg_to_rad(16.0) * lado
+	# 2. cambaleia para a frente, tentando se segurar
+	t.tween_property(sprite, "scale", s * Vector2(0.97, 1.03), 0.14).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	t.parallel().tween_property(sprite, "rotation", deg_to_rad(-5.0) * lado, 0.16).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	# 3. os joelhos cedem
+	t.tween_property(sprite, "scale", s * Vector2(1.06, 0.9), 0.14).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	t.parallel().tween_property(sprite, "rotation", deg_to_rad(8.0) * lado, 0.14).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	# 4. tomba, acelerando
+	t.tween_property(sprite, "rotation", queda, 0.3).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	t.parallel().tween_property(sprite, "scale", s, 0.3)
+	# 5. bate no chão: poeira, tremor e um quique pequeno
+	t.tween_callback(func():
+		_tremer(1.6, 0.22)
+		_soltar_poeira(Vector2(lado * ALTURA_SPRITE * 0.7, 0.0))
+		Som.tocar("pai/passo", 0.0, 0.7, 0.0))
+	t.tween_property(sprite, "rotation", queda - deg_to_rad(9.0) * lado, 0.08).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	t.parallel().tween_property(sprite, "scale", s * Vector2(1.0, 0.92), 0.08)
+	t.tween_property(sprite, "rotation", queda, 0.12).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	t.parallel().tween_property(sprite, "scale", s, 0.12)
+
+	_derrubar_arma(-lado)
+	_tremer(2.5, 0.3)
+
+
+## A arma voa da mão para o lado `lado` (1 = direita), girando, e fica no chão.
+func _derrubar_arma(lado: float) -> void:
+	if not _arma.visible:
+		return
+	_arma_atras(false)
+	var inicio := _arma.position
+	var fim := Vector2(lado * 9.0, -1.0)
+	var t := create_tween()
+	# x anda reto; y sobe e desce (um arco)
+	t.tween_property(_arma, "position:x", fim.x, 0.45).set_delay(0.05)
+	t.parallel().tween_property(_arma, "position:y", inicio.y - 7.0, 0.2).set_delay(0.05).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	t.parallel().tween_property(_arma, "position:y", fim.y, 0.25).set_delay(0.25).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	# o ícone aponta a -45°; +45° deita a arma no chão, mais uma volta no ar
+	t.parallel().tween_property(_arma, "rotation", PI / 4.0 + TAU * lado, 0.45).set_delay(0.05)
+	t.parallel().tween_property(_arma, "scale", Vector2(ESCALA_ARMA, ESCALA_ARMA), 0.1)
+	t.tween_callback(func(): _soltar_poeira(fim, 0.6))
+	t.tween_property(_arma_sprite, "modulate", _arma_sprite.modulate.darkened(0.35), 0.5)
+
+
+func _soltar_poeira(pos_local: Vector2, tamanho := 1.0) -> void:
+	var p := Poeira.new()
+	p.position = pos_local
+	p.scale = Vector2.ONE * tamanho
+	add_child(p)

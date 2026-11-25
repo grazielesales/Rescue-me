@@ -3,7 +3,9 @@ extends Node2D
 ## - Preso: fica numa bolha de magia roxa (não dá para encostar) e, com E,
 ##   chama o Pai. A luz dele (o dom do filho) está fraca e treme.
 ## - Quando a `sala` do chefe é vencida (sinal `concluiu`), a bolha estoura
-##   e a luz dele cresce.
+##   e a luz dele cresce. Isso avisa o Jogo (libertar_filho), que para de
+##   apagar a "luz do filho" da barra do HUD. Enquanto preso, a luz dele no
+##   mundo enfraquece junto com a barra.
 ## - Livre: com E, Pai e filho se reencontram (texto na tela). Ao fechar o
 ##   texto, marca a flag `flag_resgatado` e salva.
 ## Arte: o próprio Pai (Modern tiles_Free/Old: idle_32x32_2 e
@@ -75,6 +77,7 @@ func _soltar(silencioso: bool) -> void:
 	if not preso:
 		return
 	preso = false
+	Jogo.libertar_filho()  # a luz dele para de se apagar (barra do HUD)
 	_corpo.queue_free()
 	_sprite.modulate = Color.WHITE
 	_sprite.speed_scale = 1.0
@@ -122,8 +125,11 @@ func _dica() -> String:
 func _process(delta: float) -> void:
 	_t += delta
 	if preso:
-		# a luz fraca treme, como uma vela
-		_luz.energy = 0.3 + 0.08 * sin(_t * 7.0) + 0.05 * sin(_t * 13.0)
+		# a luz fraca treme, como uma vela, e vai sumindo junto com a barra
+		# "luz do filho" do HUD (Jogo.luz_filho)
+		var resta := Jogo.fracao_luz_filho()
+		var tremor := 1.0 + (1.0 - resta) * 1.5  # treme mais quando está no fim
+		_luz.energy = (0.3 + (0.08 * sin(_t * 7.0) + 0.05 * sin(_t * 13.0)) * tremor) * lerpf(0.35, 1.0, resta)
 	if _bolha_a > 0.0:
 		queue_redraw()
 	if _perto and Input.is_action_just_pressed("interagir"):
