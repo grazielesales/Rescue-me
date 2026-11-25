@@ -24,7 +24,7 @@ Para mover arquivos depois, faça isso **pelo FileSystem do editor do Godot**: e
 - Não existe mais tocha: o Pai tem uma luz fixa que o acompanha (nó `Visao` do `personagens/pai/pai.tscn`, degradê suave).
 - O raio é `base_vision_radius` (115 no 1º andar, 86 no 2º; o tamanho do antigo círculo da tocha erguida). A melhoria **Luz reforçada** multiplica o raio por `multiplicador_luz_reforcada` (1.3).
 - Cor e brilho: `vision_color` e `vision_energy` no nó `pai`.
-- O sprite do Pai fica na camada de luz 2 (`light_mask = 2`). Só a luz `Visao` ilumina essa camada (`range_item_cull_mask = 3`). Por isso a luz das salas não soma no Pai e ele tem o mesmo brilho dentro e fora delas.
+- O sprite do Pai fica na camada de luz 2 (`light_mask = 2`). Só a luz `Visao` ilumina essa camada (`range_item_cull_mask = 7`: piso, Pai e telhados). Por isso a luz das salas não soma no Pai e ele tem o mesmo brilho dentro e fora delas.
 
 ## Alavanca do 1º andar (`mundo/alavanca/alavanca.gd`)
 
@@ -40,12 +40,12 @@ Para mover arquivos depois, faça isso **pelo FileSystem do editor do Godot**: e
 
 ## Salas que acendem (`mundo/salas/sala.gd`)
 
-- Cada filho do nó **Salas** é uma sala. Ela começa coberta de preto e **acende quando o Pai pisa dentro dela**, depois de passar pela porta.
+- Cada filho do nó **Salas** é uma sala. Ela começa coberta por um telhado (`telhado.gd`, com os tiles de teto do pacote das paredes; só a luz do Pai o ilumina) e **acende quando o Pai pisa dentro dela**, depois de passar pela porta.
 - A sala fica acesa para sempre, inclusive ao voltar de outro andar. O estado fica no autoload `Jogo`.
 - Selecione uma sala no editor para ver os retângulos:
   - amarelo = `areas`, onde o Pai precisa pisar;
   - branco = `luz`;
-  - azul = `nevoa`, o que fica preto antes.
+  - azul = `nevoa`, o que o telhado cobre antes.
 - No Inspector: `cor_da_luz`, `energia`, `piscar` (luz tremendo, usada no 2º andar) e `acesa_no_inicio`.
 - `arena` e `trancar_ao_entrar` são o encaixe da sala bloqueada do GDD 3.5. As arenas já sabem quais inimigos estão dentro (`inimigos()`). **Trancar ainda não faz nada**, porque o projeto não tem combate.
 
@@ -83,28 +83,28 @@ O antigo `portao sala 2`, que era só um sprite em loop e não bloqueava nada, f
 
 ## 2º andar (`andares/andar2.tscn`)
 
-O contorno do prédio é quase o mesmo do 1º andar (sem a sala do sudeste), mas o miolo foi redesenhado. O Pai chega pelo poço, no **leste** (a escada do 1º andar fica no lado direito), e o chefe fica no ponto mais distante, no **sudoeste**. As marcas de mãos pequenas perto do poço "seguem para o oeste": é para lá que o filho foi levado.
+O contorno do prédio é quase o mesmo do 1º andar (sem a sala do sudeste), mas o miolo foi redesenhado. O Pai chega pelo poço, no **leste** (a escada do 1º andar fica no lado direito), e o chefe fica no **norte**, no alto de uma escadinha. As marcas de mãos pequenas perto do poço "seguem para o oeste": é para lá que o filho foi levado.
 
 | Lugar | O que é |
 |---|---|
 | **Depósito** (nordeste, perto do poço) | Primeira sala, opcional: a aranha grande (solta as presas da Adaga), 2 olhos azuis, baú, materiais e a página de receita da Adaga venenosa. |
-| **Laboratório** (norte) | Arena com 2 criaturas, o desenho do filho e o relatório nº 14. |
+| **Laboratório** (sudoeste) | Arena com 2 criaturas, o desenho do filho e o relatório nº 14. |
 | **Arena central** (sul) | Arena com 3 esqueletos. A parede leste dela agora é a parede de fora do prédio. |
-| **Porão** (sul) | Arena com 3 zumbis e os riscos na parede contando os dias. Ligado à Arena por uma porta lateral. |
+| **Porão** (sul) | Arena com 3 zumbis e os riscos na parede contando os dias. Separado da Arena por uma parede inteira (a porta lateral saiu). |
 | **Salão** | Aberto, sem colunas no meio. |
-| **Refúgio** (noroeste) | A única sala segura, com cama, baú e bilhete. Fica perto do santuário: dá para descansar antes do chefe. |
-| **Santuário do Feiticeiro** (sudoeste) | Entrada pelo portão de grade (`Props/portao do santuario`); a placa ao lado diz "SÓ LEVA O MENINO QUEM PASSAR POR MIM.". Dentro: o chefão (wizard), 2 demônios, o trono, a mesa de velas e o **filho**, preso numa bolha de magia sobre um círculo mágico. |
+| **Refúgio** (noroeste) | A única sala segura, com cama, baú e bilhete. Dá para descansar antes do chefe. |
+| **Santuário do Feiticeiro** (norte) | Fica mais alto: na frente há um patamar com escadinha (tiles em `Map/sombra` e `Map/escada`, colisão em `Colisoes/patamar do santuario`). Entrada pelo portão de grade (`Props/portao do santuario`); a placa ao lado diz "SÓ LEVA O MENINO QUEM PASSAR POR MIM.". Dentro: o chefão (wizard), 2 demônios, o trono, a mesa de velas e o **filho**, preso numa bolha de magia sobre um círculo mágico. |
 
 - **Sala do sudeste removida:** a sala que foi do chefe e depois do Ninho saiu do andar, junto com as aranhas pequenas, a Aranha-mãe e a escadaria bloqueada. Os tiles dela viraram o bloco escuro de fora (`1,1` da `Map/wall`), e a coluna 21 virou a parede externa (tile `0,1`, com o canto `5,3` embaixo), fechando o vão da antiga porta lateral da Arena.
 - **Poço da escada:** quem chega do 1º andar sai de um poço no chão, à direita do salão (`mundo/escada/poco.png`). Para voltar, ande até a beira e aperte **baixo**. O Pai desce os degraus, escurece e some atrás da borda; a borda é o nó `cobertura do poco`, que só aparece durante a descida.
 - **Iluminação:** penumbra roxa e azul com luzes piscando. A visão base do Pai é 48.
 - **Tochas e janelas da parede** vêm da pasta `assets/tile`, a mesma das paredes (a pasta `Dungeon Free` saiu do projeto):
   - `Props/tocha na parede 1` a `11`: a tocha de tigela de `Tiled_files/fire_animation.png` (colunas 2 e 3, 6 quadros de 48 px, `SpriteFrames_tocha_parede`), com `offset` (-6, 0) para a haste ficar no ponto do nó;
-  - `Props/janela gradeada 1` a `4`: a janela com grade de `Tiled_files/walls_floor.png`, recorte `Rect2(192, 416, 32, 32)`.
+  - `Props/janela gradeada 4` (as 1, 2 e 3 saíram): a janela com grade de `Tiled_files/walls_floor.png`, recorte `Rect2(192, 416, 32, 32)`.
 
 ## O filho (`personagens/filho/`)
 
-- Cena `filho.tscn` com o script `filho.gd`. No 2º andar ele é o nó `Entities/filho`, em (-398, 216), na ponta oeste do Santuário do Feiticeiro, sobre o círculo mágico `Props/circulo do santuario`.
+- Cena `filho.tscn` com o script `filho.gd`. No 2º andar ele é o nó `Entities/filho`, em (8, -30), na ponta leste do Santuário do Feiticeiro, sobre o círculo mágico `Props/circulo do santuario`.
 - **Preso:** fica numa bolha de magia roxa (desenhada no `_draw`, com colisão `Bolha`, então o Pai não encosta), meio tingido de roxo. Com **E** ele chama o Pai ("Pai! Eu tô aqui!" e outras falas em `falas_preso`). A luz dele (o dom do filho) é fraca e treme como vela.
 - **Livre:** o campo `sala` aponta para `Salas/SalaDoFeiticeiro`. Quando a arena é vencida (sinal `concluiu` do `sala.gd`), a bolha estoura, aparece "A magia que prendia o seu filho se desfez!" e a luz dele cresce. Se a sala já foi vencida no save, ele já começa livre.
 - **Reencontro:** livre, **E** ("E: abraçar") mostra o texto `texto_reencontro`. Ao fechar, marca a flag `filho_resgatado` e salva. Depois disso ele só diz "Vamos pra casa, pai.".

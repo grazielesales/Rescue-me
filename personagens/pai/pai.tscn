@@ -159,7 +159,7 @@ shape = SubResource("RectangleShape2D_0duit")
 
 [node name="Visao" type="PointLight2D" parent="." unique_id=1418230673]
 position = Vector2(0, -12)
-range_item_cull_mask = 3
+range_item_cull_mask = 7
 editor_description = "Ilumina a camada 1 (cenário) e a 2 (sprite do Pai). As luzes das salas só pegam a camada 1, então não somam no Pai."
 color = Color(0.72, 0.78, 0.95, 1)
 energy = 0.9

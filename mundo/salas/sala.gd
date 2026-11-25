@@ -1,7 +1,7 @@
 @tool
 class_name Sala
 extends Node2D
-## Uma sala do andar. Começa escura (coberta por uma "névoa" preta) e acende
+## Uma sala do andar. Começa escura (coberta por um telhado, telhado.gd) e acende
 ## de vez quando o Pai entra nela pela porta. Fica acesa mesmo se ele sair
 ## e também ao voltar de outro andar (o estado fica no autoload Jogo).
 ##
@@ -15,7 +15,7 @@ signal acendeu
 	set(v):
 		areas = v
 		queue_redraw()
-## Área que fica coberta de preto enquanto a sala não foi visitada.
+## Área que o telhado cobre enquanto a sala não foi visitada.
 ## Vazio = usa `areas`.
 @export var nevoa: Array[Rect2] = []:
 	set(v):
@@ -55,7 +55,7 @@ signal concluiu
 
 var acesa := false
 var _luzes: Array[PointLight2D] = []
-var _nevoas: Array[ColorRect] = []
+var _telhado: Telhado
 var _inimigos: Array[Node] = []
 var _ruido := FastNoiseLite.new()
 var _tempo := randf() * 100.0
@@ -81,15 +81,10 @@ func _ready() -> void:
 		l.visible = false
 		add_child(l)
 		_luzes.append(l)
-	for r in (nevoa if not nevoa.is_empty() else areas):
-		var c := ColorRect.new()
-		c.color = Color.BLACK
-		c.position = r.position
-		c.size = r.size
-		c.z_index = 40  # acima de chão, móveis e monstros
-		c.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		add_child(c)
-		_nevoas.append(c)
+	_telhado = Telhado.new()
+	_telhado.z_index = 40  # acima de chão, móveis e monstros
+	_telhado.montar(nevoa if not nevoa.is_empty() else areas)
+	add_child(_telhado)
 	var area := Area2D.new()
 	area.collision_layer = 0
 	area.collision_mask = 0xFFFFFFFF
@@ -139,15 +134,13 @@ func acender(imediato := false) -> void:
 	for l in _luzes:
 		l.visible = true
 		tw.tween_property(l, "energy", energia, max(t, 0.01))
-	for c in _nevoas:
-		tw.tween_property(c, "modulate:a", 0.0, max(t * 0.8, 0.01))
+	tw.tween_property(_telhado, "modulate:a", 0.0, max(t * 0.8, 0.01))
 	tw.chain().tween_callback(_terminou_de_acender)
 	acendeu.emit()
 
 
 func _terminou_de_acender() -> void:
-	for c in _nevoas:
-		c.visible = false
+	_telhado.visible = false
 	set_process(piscar > 0.0)
 
 
