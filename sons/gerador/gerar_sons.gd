@@ -37,6 +37,7 @@ func _init() -> void:
 		_interface()
 	if not "efeitos" in args:
 		_musicas()
+		_lamento()
 	print("%d sons gerados em %.1f s" % [_feitos, (Time.get_ticks_msec() - t0) / 1000.0])
 	quit()
 
@@ -405,6 +406,57 @@ func _musicas() -> void:
 		ten = somar(ten, _norm(_chimbal(c)), 0.22)
 		ten = somar(ten, _norm(_cordas(c)), 0.3)
 		salvar(saturar(ten, 1.3), 0.6, true)
+	SR = 44100
+
+
+## Lamento (musica/filho_perdido): toca uma vez quando a luz do filho apaga.
+## Caixinha de música em ré menor que vai perdendo a corda: as últimas notas
+## atrasam e desafinam para baixo, e o acorde final fica pendurado no escuro.
+## seg = segundos por acorde; notas = [tempo (s), semitom (uma oitava acima
+## da raiz), quanto a nota desafina até o fim (semitons)].
+const LAMENTO := {
+	"raiz": 146.83,
+	"seg": 5.0,
+	"acordes": [[0, 3, 7], [-4, 0, 3], [-7, -4, 0], [-5, -1, 2], [0, 3, 7]],
+	"baixos": [0, -4, -7, -5, 0],
+	"notas": [
+		[0.5, 7, 0.0], [1.5, 5, 0.0], [2.5, 3, 0.0], [3.5, 2, 0.0], [4.25, 3, 0.0],
+		[5.5, 5, 0.0], [6.5, 3, 0.0], [7.5, 2, 0.0], [8.5, 0, 0.0], [9.25, -2, 0.0],
+		[10.5, -2, 0.0], [11.5, 0, 0.0], [12.5, 2, 0.0], [13.5, 3, 0.0], [14.25, 2, 0.0],
+		[15.5, 1, 0.0], [16.6, 2, 0.0], [17.8, -1, 0.0], [19.2, -5, 0.0],
+		[20.8, 3, 0.0], [22.5, 2, -0.3], [24.6, 0, -0.8],
+	],
+}
+
+
+func _lamento() -> void:
+	SR = SR_MUSICA
+	_s("musica/filho_perdido")
+	var c := LAMENTO
+	var seg: float = c.seg
+	var qtd: int = c.acordes.size()
+	var o := silencio(seg * qtd + 5.0)
+	# acordes longos e escuros (o último fica soando)
+	for i in qtd:
+		var dur: float = seg + (5.0 if i == qtd - 1 else 2.0)
+		var acorde := silencio(dur)
+		for s in c.acordes[i]:
+			var f := _nota(c, s)
+			acorde = somar(acorde, osc(dur, f * 0.997, -1, "tri"), 0.5)
+			acorde = somar(acorde, osc(dur, f * 1.003, -1, "tri"), 0.5)
+		o = somar(o, sino(pb(acorde, 900), 0.3, 0.8), 0.35, i * seg)
+		# baixo grave, uma oitava abaixo
+		var grave := sino(osc(dur, _nota(c, c.baixos[i], -1)), 0.25)
+		o = somar(o, grave, 0.45, i * seg)
+	# caixinha de música, com eco
+	for n in c.notas:
+		var f := _nota(c, n[1], 1)
+		var f1: float = f * pow(2.0, n[2] / 12.0)
+		var nota := somar(osc(2.0, f, f1), osc(2.0, f * 2.0, f1 * 2.0), 0.25)
+		nota = pb(env(nota, 0.004, 0.5), 2600)
+		for e in 3:
+			o = somar(o, nota, 0.5 * pow(0.45, e), n[0] + e * 0.5)
+	salvar(o, 0.5)
 	SR = 44100
 
 

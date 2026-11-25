@@ -49,6 +49,30 @@ var _proximo_drop := 0
 ## bool, número ou texto. Vão no save. Use set_flag / get_flag.
 var flags := {}
 
+# --- luz do filho -------------------------------------------------------------------
+## A luz do filho (preso com o chefe) vai se apagando enquanto se joga. Se
+## chegar a zero antes de ele ser libertado, o filho não pôde ser salvo e o
+## jogo recomeça do zero (tela de fim_filho.gd + música triste).
+## Segundos de jogo até apagar (10 min). Não conta com o livro/inventário
+## abertos, nas trocas de andar nem enquanto o Pai está caído.
+const TEMPO_LUZ_FILHO := 600.0
+## Marca de quando a bolha estoura (o chefe caiu): a luz para de cair.
+const FLAG_FILHO_LIVRE := "filho_libertado"
+## Avisos quando a luz passa dessas frações.
+const AVISOS_LUZ_FILHO := [
+	[0.5, "A luz do seu filho está enfraquecendo..."],
+	[0.25, "A luz do seu filho treme. Ele não vai aguentar muito tempo."],
+	[0.1, "A luz do seu filho é só uma faísca. Corra!"],
+]
+## A cada quantos segundos de luz gasta o save é gravado (para fechar o jogo
+## à força não devolver o tempo).
+const SALVAR_LUZ_A_CADA := 30.0
+## Segundos de luz que ainda restam.
+var luz_filho := TEMPO_LUZ_FILHO
+var _luz_desde_save := 0.0
+var _fim_filho := false
+var _tela_fim: CanvasLayer
+
 # --- save -------------------------------------------------------------------------
 ## Sobe quando o formato do save mudar (e trate a diferença em _migrar_save).
 const VERSAO_SAVE := 1
@@ -139,6 +163,8 @@ func _ready() -> void:
 	add_child(_livro)
 	_inv = preload("res://jogo/inventario_ui.gd").new()
 	add_child(_inv)
+	_tela_fim = preload("res://jogo/fim_filho.gd").new()
+	add_child(_tela_fim)
 
 	# Fechar a janela passa por _notification (salva antes de sair).
 	get_tree().set_auto_accept_quit(false)
@@ -160,7 +186,7 @@ func _notification(what: int) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if not event.is_pressed() or event.is_echo():
+	if not event.is_pressed() or event.is_echo() or _fim_filho:
 		return
 	if OS.is_debug_build() and event is InputEventKey and event.keycode == KEY_N \
 			and event.ctrl_pressed and event.shift_pressed:
@@ -317,6 +343,8 @@ func _estado_inicial() -> void:
 	drops = {}
 	_proximo_drop = 0
 	flags = {}
+	luz_filho = TEMPO_LUZ_FILHO
+	_luz_desde_save = 0.0
 
 
 func tem_save() -> bool:
@@ -358,6 +386,7 @@ func salvar() -> bool:
 		"drops": drops_json,
 		"proximo_drop": _proximo_drop,
 		"flags": flags,
+		"luz_filho": luz_filho,
 	}
 	var tmp := caminho_save + ".tmp"
 	var f := FileAccess.open(tmp, FileAccess.WRITE)
@@ -425,6 +454,7 @@ func carregar() -> bool:
 		var v: Variant = dados.flags[nome]
 		# o JSON lê todo número como float; inteiros voltam a ser int
 		flags[nome] = int(v) if v is float and v == floorf(v) else v
+	luz_filho = clampf(float(dados.get("luz_filho", TEMPO_LUZ_FILHO)), 0.0, TEMPO_LUZ_FILHO)
 	inventario_mudou.emit()
 	armas_mudou.emit()
 	return true
@@ -470,8 +500,9 @@ func _sem_andar_na_abertura() -> void:
 
 
 ## Apaga o save e recomeça do 1º andar (Ctrl+Shift+N em desenvolvimento;
-## depois vai para o botão "Novo jogo" da tela inicial).
-func novo_jogo() -> void:
+## depois vai para o botão "Novo jogo" da tela inicial). `mensagem` vazia =
+## não mostra nada ao recomeçar.
+func novo_jogo(mensagem := "Novo jogo (save apagado).") -> void:
 	if _trocando:
 		return
 	_trocando = true
@@ -484,13 +515,16 @@ func novo_jogo() -> void:
 	_estado_inicial()
 	inventario_mudou.emit()
 	armas_mudou.emit()
+	get_tree().paused = false
 	get_tree().change_scene_to_file(_cena_principal())
 	await get_tree().process_frame
 	await get_tree().process_frame
 	_morrendo = false
+	_fim_filho = false
 	await fade(0.0, 0.45)
 	_trocando = false
-	mostrar_mensagem("Novo jogo (save apagado).")
+	if mensagem != "":
+		mostrar_mensagem(mensagem)
 
 
 func _cena_principal() -> String:
@@ -720,6 +754,69 @@ func fade(alvo: float, tempo: float) -> void:
 	var t := create_tween()
 	t.tween_property(_fade, "color:a", alvo, tempo)
 	await t.finished
+
+
+# --- luz do filho ------------------------------------------------------------------
+
+func _process(delta: float) -> void:
+	_gastar_luz_filho(delta)
+
+
+## 1 = luz cheia, 0 = apagada.
+func fracao_luz_filho() -> float:
+	return luz_filho / TEMPO_LUZ_FILHO
+
+
+## O filho já saiu da bolha (o chefe caiu)? Daí a luz não cai mais.
+func filho_livre() -> bool:
+	return get_flag(FLAG_FILHO_LIVRE, false) or get_flag("filho_resgatado", false)
+
+
+## Chamado pelo filho.gd quando a bolha estoura (ou já estava estourada).
+func libertar_filho() -> void:
+	if get_flag(FLAG_FILHO_LIVRE, false):
+		return
+	set_flag(FLAG_FILHO_LIVRE, true)
+	salvar_progresso()
+
+
+func _gastar_luz_filho(delta: float) -> void:
+	if _fim_filho or filho_livre():
+		return
+	if not _pai_ativo() or _morrendo or _trocando or get_tree().paused:
+		return
+	var antes := fracao_luz_filho()
+	luz_filho = maxf(0.0, luz_filho - delta)
+	var agora := fracao_luz_filho()
+	for aviso in AVISOS_LUZ_FILHO:
+		if antes > aviso[0] and agora <= aviso[0]:
+			mostrar_mensagem(aviso[1], 3.5, true)
+	_luz_desde_save += delta
+	if _luz_desde_save >= SALVAR_LUZ_A_CADA:
+		_luz_desde_save = 0.0
+		salvar_progresso()
+	if luz_filho <= 0.0:
+		_luz_filho_apagou()
+
+
+## A luz acabou: tela do fim com a música triste e o jogo recomeça do zero.
+func _luz_filho_apagou() -> void:
+	_fim_filho = true
+	if _livro.visible:
+		_livro.fechar()
+	if _inv.visible:
+		_inv.fechar()
+	esconder_texto()
+	esconder_dica()
+	if _msg_tween:
+		_msg_tween.kill()
+	_msg.modulate.a = 0.0
+	get_tree().paused = true  # monstros e Pai param onde estão
+	Musica.tocar_lamento()
+	await _tela_fim.mostrar()
+	_fade.color.a = 1.0  # preto por baixo da tela do fim
+	await _tela_fim.esconder()
+	await novo_jogo("")
 
 
 # --- textos ----------------------------------------------------------------------

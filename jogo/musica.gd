@@ -20,6 +20,8 @@ const TEMPO_SAIR := 3.0
 const ESPERA_RELAXAR := 2.0
 ## Fade ao trocar de andar.
 const TEMPO_TROCA := 0.6
+## Música que toca uma vez quando a luz do filho apaga (Jogo).
+const LAMENTO := "filho_perdido"
 
 ## true enquanto a versão tensa está (ou vai ficar) por cima.
 var tensa := false
@@ -32,6 +34,8 @@ var _volume := 1.0   # fade de troca de andar
 var _relaxar_t := 0.0
 var _checar_t := 0.0
 var _troca: Tween
+var _lamento: AudioStreamPlayer
+var _lamento_tween: Tween
 
 
 func _ready() -> void:
@@ -39,7 +43,8 @@ func _ready() -> void:
 	var bus := BARRAMENTO if AudioServer.get_bus_index(BARRAMENTO) != -1 else &"Master"
 	_ambiente = AudioStreamPlayer.new()
 	_tensao = AudioStreamPlayer.new()
-	for p in [_ambiente, _tensao]:
+	_lamento = AudioStreamPlayer.new()
+	for p in [_ambiente, _tensao, _lamento]:
 		p.bus = bus
 		add_child(p)
 	_aplicar_volume()
@@ -51,6 +56,7 @@ func tocar_andar(nome: String) -> void:
 	if nome == _atual:
 		return
 	_atual = nome
+	_parar_lamento()
 	var amb := _carregar(nome + "_ambiente")
 	var ten := _carregar(nome + "_tensao")
 	if _troca:
@@ -72,6 +78,32 @@ func parar() -> void:
 	_troca = create_tween()
 	_troca.tween_property(self, "_volume", 0.0, TEMPO_TROCA)
 	_troca.tween_callback(_trocar.bind(null, null))
+
+
+## O lamento (luz do filho apagou): para a música do andar e toca uma vez,
+## por cima de tudo. Sai sozinho quando um andar volta a tocar.
+func tocar_lamento() -> void:
+	parar()
+	var s := _carregar(LAMENTO)
+	if s == null:
+		return
+	if _lamento_tween:
+		_lamento_tween.kill()
+	_lamento.stream = s
+	_lamento.volume_db = VOLUME_DB - 30.0
+	_lamento.play()
+	_lamento_tween = create_tween()
+	_lamento_tween.tween_property(_lamento, "volume_db", VOLUME_DB + 2.0, 1.5)
+
+
+func _parar_lamento() -> void:
+	if not _lamento.playing:
+		return
+	if _lamento_tween:
+		_lamento_tween.kill()
+	_lamento_tween = create_tween()
+	_lamento_tween.tween_property(_lamento, "volume_db", -60.0, 1.5)
+	_lamento_tween.tween_callback(_lamento.stop)
 
 
 func _trocar(amb: AudioStream, ten: AudioStream) -> void:
