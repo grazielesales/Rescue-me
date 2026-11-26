@@ -4141,54 +4141,6 @@ size = Vector2(9.6, 8)
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_colisao3"]
 size = Vector2(761.6, 362.45)
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_7crcu"]
-atlas = ExtResource("6_s1flt")
-region = Rect2(0, 128, 32, 32)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_jy2or"]
-atlas = ExtResource("6_s1flt")
-region = Rect2(32, 128, 32, 32)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_h23o8"]
-atlas = ExtResource("6_s1flt")
-region = Rect2(64, 128, 32, 32)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_atbf1"]
-atlas = ExtResource("6_s1flt")
-region = Rect2(96, 128, 32, 32)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_3r31q"]
-atlas = ExtResource("6_s1flt")
-region = Rect2(128, 128, 32, 32)
-
-[sub_resource type="SpriteFrames" id="SpriteFrames_e1nxh"]
-animations = [{
-"frames": [],
-"loop": 1,
-"name": &"default",
-"speed": 5.0
-}, {
-"frames": [{
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_7crcu")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_jy2or")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_h23o8")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_atbf1")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_3r31q")
-}],
-"loop": 1,
-"name": &"new_animation",
-"speed": 5.0
-}]
-
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_colisao4"]
 size = Vector2(27.2, 17.6)
 
@@ -4832,21 +4784,31 @@ shape = SubResource("RectangleShape2D_colisao3")
 [node name="Sprite2D4" type="Sprite2D" parent="Props" unique_id=1234714335]
 position = Vector2(327, -150)
 
-[node name="baú" type="AnimatedSprite2D" parent="Props" unique_id=967800748]
+[node name="baú" type="Sprite2D" parent="Props" unique_id=967800748]
+editor_description = "Baú da Sala 1 (bau.gd): E abre e solta 2 teias e 1 maçã (fecha a conta da Lança + curativo no 1º andar). Flag bau_sala1_aberto."
 top_level = true
-position = Vector2(-335, -19)
-sprite_frames = SubResource("SpriteFrames_e1nxh")
-animation = &"new_animation"
-frame_progress = 0.051662557
-centered = false
-offset = Vector2(0, -32)
+position = Vector2(-318, -30)
+texture = ExtResource("6_s1flt")
+offset = Vector2(0, -8)
+region_enabled = true
+region_rect = Rect2(7, 132, 19, 18)
+script = ExtResource("55_bau")
+regiao_fechado = Rect2(7, 132, 19, 18)
+regiao_aberto = Rect2(7, 128, 19, 22)
+flag_aberto = "bau_sala1_aberto"
+flag_recompensa = ""
+mensagem = ""
+itens = Dictionary[String, int]({
+"teia": 2,
+"maca": 1
+})
 
 [node name="Colisao" type="StaticBody2D" parent="Props/baú" unique_id=1409020029]
 visible = false
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Props/baú/Colisao" unique_id=140019904]
 visible = false
-position = Vector2(16, -8.8)
+position = Vector2(-1, 2.2)
 shape = SubResource("RectangleShape2D_colisao4")
 
 [node name="portao sala 2" type="AnimatedSprite2D" parent="Props" unique_id=149698351]

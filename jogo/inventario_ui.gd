@@ -226,6 +226,11 @@ func _mostrar_info() -> void:
 		var linhas := [["Dano", str(a.dano)], ["Alcance", str(int(a.alcance))], ["Velocidade", _velocidade(a.recarga)]]
 		if a.has("veneno"):
 			linhas.append(["Veneno", "%d s" % a.veneno])
+		if a.get("angulo", 0.0) >= 120.0:
+			linhas.append(["Golpe", "em área"])
+		var forte := Itens.forte_contra(id)
+		if forte != "":
+			linhas.append(["Forte contra", forte])
 		_status(linhas)
 		var no_atalho := Jogo.slots.find(id)
 		var dica := "[1] [2] [3] colocar no atalho"
@@ -239,6 +244,8 @@ func _mostrar_info() -> void:
 		_info_tipo.text = "ITEM DE CURA" if id == "curativo" else "MATERIAL"
 		_info_desc.text = DESCRICOES.get(id, "")
 		var linhas := [["Quantidade", "x%d" % s.quantidade]]
+		if Itens.onde_achar(id) != "":
+			linhas.append(["Onde achar", Itens.onde_achar(id)])
 		if id == "curativo":
 			linhas.append(["Recupera", "%d de vida" % Itens.CURA])
 			_info_acoes.text = "[E] usar"

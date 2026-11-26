@@ -275,6 +275,35 @@ Nenhum monstro morre com 1 golpe, nem com a arma mais forte contra ele (por isso
 
 O Cajado de fogo usa `assets/staffs/6.png`. A ordem natural é: aranhas → teias → lança → Bruxa → cajado → Frankie.
 
+### Arma certa para cada monstro do 2º andar
+
+Mesma regra do 1º andar: a arma forte mata em 2 golpes e as outras armas da época em 3 ou mais. Para isso, as vidas da Aranha grande (8 → 9), da Criatura mágica (5 → 9), do Zumbi (8 → 12) e do Demônio (10 → 13) subiram em `Itens.INIMIGOS`.
+
+| Monstro | Arma mais forte | Dano contra ele | Como conseguir a arma |
+|---|---|---|---|
+| Aranha grande (vida 9) | Adaga venenosa | 2 + 3 = 5, mais veneno (2 golpes; clava e espada, 3) | página no Depósito; a aranha grande solta 2 presas (garantidas) |
+| Criatura mágica (vida 9) | Lança de teia | 3 + 2 = 5 (2 golpes; clava, 3) | já vem no livro |
+| Esqueleto (vida 12) | Clava de osso | 4 + 3 = 7 (2 golpes) | já vem no livro |
+| Zumbi (vida 12) | Machado sombrio | 6 + 3 = 9, golpe em área (2 golpes; clava e espada, 3) | página no Porão: 1 fragmento + 3 ossos + 2 sucatas |
+| Demônio (vida 13) | Espada espectral | 4 + 3 = 7 (2 golpes; machado e lâmina, 3) | página na Arena central; os 4 ectoplasmas vêm do baú do Depósito |
+| Feiticeiro espectral (vida 20) | Lâmina de luz | 6 + 2 = 8 (3 golpes; machado, 4; espada, 5) | página no Refúgio; o baú do Refúgio completa os materiais |
+
+- A Espada **não** tem bônus contra o Feiticeiro: com ela antes do chefe, a luta ficaria fácil demais.
+- O livro de receitas e o inventário mostram "Forte contra" lendo o `bonus` de `Itens.ARMAS`. Mudou o bônus, mudou o texto. O `efeito` das receitas não repete a fraqueza.
+
+### Baús (`mundo/bau/bau.gd`, campo `itens`)
+
+O baú solta sempre os mesmos itens no chão, à frente dele, ao abrir com **E**. Eles fecham a conta das receitas que o mapa sozinho não paga. A flag de cada baú vai no save (aberto continua aberto).
+
+| Baú | Itens | Para quê | Flag |
+|---|---|---|---|
+| Sala 1 (1º andar) | 2 teias, 1 maçã | o andar só tem 3 teias e a Lança gasta as 3: sem o baú não sobra para o curativo | `bau_sala1_aberto` |
+| Depósito (2º andar) | 4 ectoplasmas | Espada espectral (antes, o único ectoplasma era o do chefe) | `bau_deposito_aberto` |
+| Refúgio (2º andar) | 1 ectoplasma, 2 fragmentos, 1 pó mágico | o que falta para a Lâmina de luz antes do chefe | `bau_refugio_aberto` |
+
+- Mensagem vazia com `itens` = o baú lista o que saiu ("No baú: 2 Teia resistente, 1 Maçã.").
+- O baú da Sala 1 deixou de ser a animação em laço: é um `Sprite2D` com os quadros fechado e aberto da mesma folha (`assets/tile/PNG/doors_lever_chest_animation.png`).
+
 | Quem | Cura que solta |
 |---|---|
 | Caixas e barris | maçã (20%) |
@@ -349,7 +378,8 @@ A bruxa é a **Wizard sheet** de GandalfHardcore (`bruxa/Wizard sheet.png`, quad
 - **Morte:** o Pai volta para o último ponto de salvamento (começo do andar ou última sala vencida), com vida cheia e sem perder materiais.
 - **Drops:** monstros, caixas e barris soltam materiais; o Pai pega passando por cima. Todo sprite em `Props` cujo nome começa com "caixa" ou "barril" vira quebrável (`jogo/quebravel.gd`).
 - **Cura no chão** (`Itens.CURAS`): a **maçã** (cura 1) e a **poção de vida** (cura 3) curam na hora em que o Pai passa por cima e não vão para o inventário (`coletavel.gd` chama `pai.curar()`). O curativo continua sendo feito no livro e usado com Q. Sprites: `assets/itens-armas/warrior-items__asset.png`.
-- **Receitas novas:** um bilhete com o campo `receita` preenchido é uma página do livro (no 2º andar, a página do Depósito libera a Adaga venenosa). Derrotar a criatura mágica libera a Luz reforçada, e o feiticeiro, a Espada espectral.
+- **Receitas novas:** um bilhete com o campo `receita` preenchido é uma página do livro. No 2º andar: Adaga venenosa (Depósito), Machado sombrio (Porão), Espada espectral (Arena central) e Lâmina de luz (Refúgio). Derrotar a criatura mágica libera a Luz reforçada.
+- **Livro de receitas:** a página da direita mostra o dano (e o dano por segundo), o alcance e a abertura do golpe, o veneno, contra quem a arma é forte e a diferença de dano por segundo para a arma equipada (verde = melhor). Em cada material que falta aparece de onde ele vem (`onde` em `Itens.MATERIAIS`). Quando não cabe tudo, a página rola (roda do mouse ou PgUp/PgDn) e uma setinha avisa.
 - **HUD** (`jogo/hud.gd`) e **livro/inventário** (`jogo/livro.gd`) são criados pelo autoload `Jogo`.
 
 ## Autoload `Jogo` (`jogo/jogo.gd`)

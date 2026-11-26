@@ -13,6 +13,7 @@
 [ext_resource type="Texture2D" uid="uid://5g1xdu7no62a" path="res://assets/Medieval Free Pack/Medieval Free Pack ( Dev Essentials ).png" id="12_lpbg2"]
 [ext_resource type="Texture2D" uid="uid://ob52w643pl1a" path="res://mundo/narrativa/bilhete.png" id="13_y3th1"]
 [ext_resource type="Script" uid="uid://ckstx4okmu1fu" path="res://mundo/narrativa/bilhete.gd" id="14_sn4ll"]
+[ext_resource type="Script" uid="uid://bqwn3ibyxnfmv" path="res://mundo/bau/bau.gd" id="bau_script"]
 [ext_resource type="Texture2D" uid="uid://bemoyllh7byq5" path="res://mundo/narrativa/desenho.png" id="15_bk45u"]
 [ext_resource type="Texture2D" uid="uid://u0kgugcy45va" path="res://mundo/escada/poco.png" id="16_r2x3u"]
 [ext_resource type="PackedScene" uid="uid://c2fb0kuafv06b" path="res://inimigos/esqueleto.tscn" id="18_npl0s"]
@@ -3601,11 +3602,23 @@ position = Vector2(0, -18)
 shape = SubResource("RectangleShape2D_fmfy5")
 
 [node name="bau refugio" type="Sprite2D" parent="Props" unique_id=527106843]
+editor_description = "Baú do Refúgio (bau.gd): solta o que falta para a Lâmina de luz (1 ectoplasma, 2 fragmentos, 1 pó mágico). Flag bau_refugio_aberto."
 position = Vector2(-300, -27)
 texture = ExtResource("7_ihnnp")
-offset = Vector2(0, -11)
+offset = Vector2(0, -8)
 region_enabled = true
-region_rect = Rect2(148, 16, 28, 22)
+region_rect = Rect2(151, 20, 19, 18)
+script = ExtResource("bau_script")
+regiao_fechado = Rect2(151, 20, 19, 18)
+regiao_aberto = Rect2(183, 24, 19, 14)
+flag_aberto = "bau_refugio_aberto"
+flag_recompensa = ""
+mensagem = ""
+itens = Dictionary[String, int]({
+"ectoplasma": 1,
+"fragmento": 2,
+"po_magico": 1
+})
 
 [node name="Colisao 2" type="StaticBody2D" parent="Props/bau refugio" unique_id=443063517]
 
@@ -3715,11 +3728,21 @@ position = Vector2(0, -6.5)
 shape = SubResource("RectangleShape2D_fr8vw")
 
 [node name="bau deposito" type="Sprite2D" parent="Props" unique_id=88421907]
+editor_description = "Baú do Depósito (bau.gd): solta 4 ectoplasmas (custo da Espada espectral). Flag bau_deposito_aberto."
 position = Vector2(230, -61)
 texture = ExtResource("7_ihnnp")
-offset = Vector2(0, -11)
+offset = Vector2(0, -8)
 region_enabled = true
-region_rect = Rect2(148, 16, 28, 22)
+region_rect = Rect2(151, 20, 19, 18)
+script = ExtResource("bau_script")
+regiao_fechado = Rect2(151, 20, 19, 18)
+regiao_aberto = Rect2(183, 24, 19, 14)
+flag_aberto = "bau_deposito_aberto"
+flag_recompensa = ""
+mensagem = ""
+itens = Dictionary[String, int]({
+"ectoplasma": 4
+})
 
 [node name="Colisao 10" type="StaticBody2D" parent="Props/bau deposito" unique_id=158791053]
 
@@ -3738,6 +3761,42 @@ ADAGA VENENOSA
 2 presas venenosas + 1 osso
 Causa veneno por alguns segundos."
 receita = "adaga"
+
+[node name="pagina do machado" type="Sprite2D" parent="Props" unique_id=604118233]
+z_index = -1
+position = Vector2(98, 272)
+texture = ExtResource("13_y3th1")
+script = ExtResource("14_sn4ll")
+texto = "Página do livro de receitas:
+
+MACHADO SOMBRIO
+1 fragmento sombrio + 3 ossos + 2 sucatas
+Dano alto, ataque em área."
+receita = "machado"
+
+[node name="pagina da espada" type="Sprite2D" parent="Props" unique_id=604118234]
+z_index = -1
+position = Vector2(310, 270)
+texture = ExtResource("13_y3th1")
+script = ExtResource("14_sn4ll")
+texto = "Página do livro de receitas:
+
+ESPADA ESPECTRAL
+4 ectoplasmas + 2 ossos + 2 sucatas
+Lâmina fria que corta o que não é deste mundo."
+receita = "espada"
+
+[node name="pagina da lamina" type="Sprite2D" parent="Props" unique_id=604118235]
+z_index = -1
+position = Vector2(-266, -12)
+texture = ExtResource("13_y3th1")
+script = ExtResource("14_sn4ll")
+texto = "Página do livro de receitas:
+
+LÂMINA DE LUZ
+3 pós mágicos + 2 fragmentos sombrios + 1 ectoplasma
+A melhor arma do jogo: rápida e forte."
+receita = "lamina"
 
 [node name="barril 3" type="Sprite2D" parent="Props" unique_id=2085957850]
 position = Vector2(-56, 214)
