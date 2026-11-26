@@ -160,6 +160,7 @@ func _marcar_resgate() -> void:
 		return
 	Jogo.set_flag(flag_resgatado, true)
 	Jogo.salvar_progresso()
+	Jogo.terminar_jogo()  # fim do jogo: créditos e volta ao menu
 
 
 ## Bolha de magia: disco roxo transparente, contorno que pulsa e faíscas girando.

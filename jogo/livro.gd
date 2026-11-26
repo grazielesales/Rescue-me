@@ -3,8 +3,10 @@ extends CanvasLayer
 ## Abre por cima do jogo, com o jogo pausado. Esc ou R fecham.
 ## - página esquerda: lista de todas as receitas; as não descobertas aparecem
 ##   apagadas (cinza e transparentes, com cadeado) e não dá para criar;
-## - página direita: a receita escolhida, com ícone, efeito, materiais
-##   (tem/precisa) e o botão Criar, ativo só com tudo disponível;
+## - página direita: a receita escolhida, com ícone, efeito, a ficha da arma
+##   (dano e dano por segundo, alcance e abertura do golpe, veneno, contra quem
+##   é forte e a comparação com a arma equipada), materiais (tem/precisa, e
+##   onde achar o que falta) e o botão Criar, ativo só com tudo disponível;
 ## - fitas na lateral: filtram por categoria (todas, armas, cura, melhorias).
 ## Teclado: setas cima/baixo escolhem a receita, esquerda/direita trocam a fita,
 ## Enter/Espaço criam.
@@ -19,7 +21,8 @@ const TELA := Vector2(428, 242)
 const CAPA := Rect2(14, 16, 384, 212)
 const LARGURA_PAGINA := 178
 ## Largura útil do texto dentro de uma página (página menos as margens).
-const LARGURA_TEXTO := 158
+## (164 da página direita menos a barra de rolagem.)
+const LARGURA_TEXTO := 156
 
 const COR_TINTA := Color(0.227, 0.133, 0.094)
 const COR_TINTA_FRACA := Color(0.227, 0.133, 0.094, 0.55)
@@ -47,6 +50,12 @@ var _visiveis: Array[String] = []
 var _lista: VBoxContainer
 var _contagem: Label
 var _detalhe: VBoxContainer
+## Corpo da página direita (rola com a roda do mouse ou PgUp/PgDn quando não cabe).
+var _rolar_detalhe: ScrollContainer
+## Rodapé fixo da página direita: botão Criar, "Já criado" ou como descobrir.
+var _rodape: VBoxContainer
+## Setinha que avisa que a página direita continua embaixo (PgDn/roda do mouse).
+var _seta: TextureRect
 var _abas_bt := {}
 var _escuro: ColorRect
 var _estilo_sel: StyleBoxTexture
@@ -119,12 +128,32 @@ func _ready() -> void:
 	_lista.add_theme_constant_override("separation", 1)
 	rolar.add_child(_lista)
 
-	# página direita: detalhe da receita
-	var m_dir := _margem(dir, 10, 8)
+	# página direita: detalhe da receita (corpo com rolagem + rodapé fixo)
+	var m_dir := _margem(dir, 7, 7)
 	raiz.add_child(m_dir)
+	var col_dir := VBoxContainer.new()
+	col_dir.add_theme_constant_override("separation", 2)
+	m_dir.add_child(col_dir)
+	_rolar_detalhe = ScrollContainer.new()
+	_rolar_detalhe.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_rolar_detalhe.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	col_dir.add_child(_rolar_detalhe)
 	_detalhe = VBoxContainer.new()
 	_detalhe.add_theme_constant_override("separation", 2)
-	m_dir.add_child(_detalhe)
+	_detalhe.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_rolar_detalhe.add_child(_detalhe)
+	var centro_seta := CenterContainer.new()
+	col_dir.add_child(centro_seta)
+	_seta = TextureRect.new()
+	_seta.texture = load(UI + "themes/parchment/arrow.png")
+	_seta.modulate = COR_TINTA_FRACA
+	_seta.visible = false
+	centro_seta.add_child(_seta)
+	_rolar_detalhe.get_v_scroll_bar().value_changed.connect(func(_v): _atualizar_seta())
+	_rolar_detalhe.resized.connect(_atualizar_seta)
+	_detalhe.resized.connect(_atualizar_seta)
+	_rodape = VBoxContainer.new()
+	col_dir.add_child(_rodape)
 
 	# faixa com o nome do livro, por cima da capa
 	var faixa := CenterContainer.new()
@@ -136,7 +165,7 @@ func _ready() -> void:
 	nome_livro.text = "Livro de Receitas"
 	faixa.add_child(nome_livro)
 
-	var dica := _texto("R/Esc: fechar    Setas: escolher    Enter: criar", COR_DICA)
+	var dica := _texto("R/Esc: fechar  Setas: escolher  Enter: criar  PgDn: rolar", COR_DICA)
 	dica.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	dica.position = Vector2(0, CAPA.end.y + 2)
 	dica.size = Vector2(TELA.x, 13)
@@ -184,6 +213,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		_mover_aba(-1)
 	elif event.is_action("ui_right"):
 		_mover_aba(1)
+	elif event is InputEventKey and event.keycode in [KEY_PAGEUP, KEY_PAGEDOWN]:
+		_rolar_detalhe.scroll_vertical += 40 * (1 if event.keycode == KEY_PAGEDOWN else -1)
 	elif event.is_action("ui_accept"):
 		if _sel != "" and not Jogo.criar(_sel):
 			Som.tocar("interface/erro", 0.0, 1.0, 0.0)
@@ -289,8 +320,9 @@ func _linha(r: Dictionary, conhece: bool) -> Button:
 
 
 func _montar_detalhe() -> void:
-	for c in _detalhe.get_children():
+	for c in _detalhe.get_children() + _rodape.get_children():
 		c.queue_free()
+	_rolar_detalhe.scroll_vertical = 0
 	if _sel == "":
 		_detalhe.add_child(_texto("Nenhuma receita descoberta aqui ainda.", COR_TINTA, true))
 		_detalhe.add_child(_texto("Procure páginas pelos andares e derrote monstros novos.", COR_TINTA_FRACA, true))
@@ -315,21 +347,28 @@ func _montar_detalhe() -> void:
 	var nomes := VBoxContainer.new()
 	nomes.alignment = BoxContainer.ALIGNMENT_CENTER
 	nomes.add_theme_constant_override("separation", 0)
-	nomes.add_child(_texto(Itens.nome_receita(r), tinta))
-	nomes.add_child(_texto(NOME_TIPO.get(r.tipo, ""), COR_TINTA_FRACA))
+	var nome_receita := _texto(Itens.nome_receita(r), tinta, true)
+	nome_receita.custom_minimum_size.x = LARGURA_TEXTO - 44  # ao lado do ícone; nome longo quebra
+	nomes.add_child(nome_receita)
+	var sub: String = NOME_TIPO.get(r.tipo, "")
+	if r.tipo == "arma":
+		var a: Dictionary = Itens.ARMAS[r.id]
+		sub = "Dano %d (%s/s)" % [a.dano, _num(Itens.dano_por_segundo(r.id))]
+	nomes.add_child(_texto(sub, COR_TINTA_FRACA))
 	topo.add_child(nomes)
 	_detalhe.add_child(topo)
 
-	_detalhe.add_child(HSeparator.new())
-	_detalhe.add_child(_texto(r.efeito, tinta, true))
+	_detalhe.add_child(_linha_fina())
+	# arma: a ficha diz o que ela faz (a frase de efeito fica no inventário)
+	if r.tipo != "arma":
+		_detalhe.add_child(_texto(r.efeito, tinta, true))
 	if r.tipo == "arma":
-		var a: Dictionary = Itens.ARMAS[r.id]
-		_detalhe.add_child(_texto("Dano %d   Alcance %d   %.2fs" % [a.dano, a.alcance, a.recarga], COR_TINTA_FRACA))
+		_detalhe.add_child(_ficha_arma(r.id, tinta))
 	elif r.tipo == "curativo":
 		_detalhe.add_child(_texto("Você tem: %d" % Jogo.curativos, COR_TINTA_FRACA))
 
 	# materiais (tem/precisa)
-	_detalhe.add_child(HSeparator.new())
+	_detalhe.add_child(_linha_fina())
 	for m in r.custo:
 		var tem := Jogo.quantidade(m)
 		var precisa: int = r.custo[m]
@@ -342,15 +381,21 @@ func _montar_detalhe() -> void:
 		mi.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		mi.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		h.add_child(mi)
-		var nome := _texto(Itens.nome_material(m), tinta)
+		var nome := _texto(Itens.nome_material(m), tinta, true)
+		nome.custom_minimum_size.x = LARGURA_TEXTO - 46  # nome longo quebra em vez de alargar a página
 		nome.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		h.add_child(nome)
 		h.add_child(_texto("%d/%d" % [tem, precisa], (COR_OK if tem >= precisa else COR_FALTA) if conhece else COR_TINTA_FRACA))
 		_detalhe.add_child(h)
-
-	var espaco := Control.new()
-	espaco.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_detalhe.add_child(espaco)
+		var onde := Itens.onde_achar(m)
+		if conhece and tem < precisa and onde != "" and not Jogo.ja_criou(r):
+			# embaixo do nome: de onde vem o que falta
+			var dica_onde := _texto("de " + onde, COR_TINTA_FRACA, true)
+			dica_onde.custom_minimum_size.x = LARGURA_TEXTO - 12
+			var recuo := MarginContainer.new()
+			recuo.add_theme_constant_override("margin_left", 12)
+			recuo.add_child(dica_onde)
+			_detalhe.add_child(recuo)
 
 	var base := HBoxContainer.new()
 	base.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -378,13 +423,59 @@ func _montar_detalhe() -> void:
 		base.add_child(_texto("Já criado", COR_OK))
 	else:
 		var criar := Button.new()
-		criar.text = "Criar"
+		var pode := Jogo.pode_criar(r)
+		criar.text = "Criar" if pode else "Falta material"
 		criar.focus_mode = Control.FOCUS_NONE
 		criar.custom_minimum_size = Vector2(64, 0)
-		criar.disabled = not Jogo.pode_criar(r)
+		criar.disabled = not pode
 		criar.pressed.connect(func(): Jogo.criar(r.id))
 		base.add_child(criar)
-	_detalhe.add_child(base)
+	_rodape.add_child(base)
+
+
+## Ficha da arma, em poucas linhas (a página é estreita: ~24 letras por
+## linha): alcance e abertura do golpe, veneno, contra quem ela é forte e a
+## diferença de dano por segundo para a arma equipada (verde = melhor).
+## O dano fica no subtítulo do cabeçalho.
+func _ficha_arma(id: String, tinta: Color) -> VBoxContainer:
+	var a: Dictionary = Itens.ARMAS[id]
+	var col := VBoxContainer.new()
+	col.add_theme_constant_override("separation", 0)
+	col.add_child(_texto("Alcance %d, golpe %s" % [a.alcance, Itens.abertura_golpe(id)], tinta, true))
+	if a.has("veneno"):
+		col.add_child(_texto("Veneno: 1/s por %d s" % a.veneno, tinta, true))
+	var forte := Itens.forte_contra(id)
+	if forte != "":
+		col.add_child(_texto("Forte contra " + forte, tinta, true))
+	var atual := Jogo.id_arma_atual()
+	if atual != id:
+		var dif := Itens.dano_por_segundo(id) - Itens.dano_por_segundo(atual)
+		var cor := COR_OK if dif > 0.05 else (COR_FALTA if dif < -0.05 else COR_TINTA_FRACA)
+		col.add_child(_texto("vs. %s: %s%s dano/s" % [Itens.ARMAS[atual].curto, "+" if dif >= 0.0 else "", _num(dif)], cor, true))
+	return col
+
+
+## Mostra a setinha enquanto houver conteúdo abaixo do que aparece na página.
+func _atualizar_seta() -> void:
+	var falta := _detalhe.size.y - _rolar_detalhe.size.y - _rolar_detalhe.scroll_vertical
+	_seta.visible = falta > 2.0
+
+
+## Separador de 1 px (o HSeparator do tema ocupa espaço demais na página).
+func _linha_fina() -> Control:
+	var m := MarginContainer.new()
+	m.add_theme_constant_override("margin_top", 2)
+	m.add_theme_constant_override("margin_bottom", 2)
+	var l := ColorRect.new()
+	l.color = COR_TINTA_FRACA
+	l.custom_minimum_size = Vector2(0, 1)
+	m.add_child(l)
+	return m
+
+
+## Número com vírgula e uma casa (6,0).
+func _num(x: float) -> String:
+	return ("%.1f" % x).replace(".", ",")
 
 
 ## Dica de como liberar uma receita: o monstro que ensina, ou uma página perdida.

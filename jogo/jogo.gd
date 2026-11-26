@@ -4,8 +4,11 @@ extends CanvasLayer
 ## salvamento) + fade, mensagens na tela, HUD e livro de receitas.
 ##
 ## Save em disco (user://save.json): grava sozinho quando o checkpoint muda
-## (definir_checkpoint) e ao fechar a janela. Ao abrir o jogo, continua do
-## save. Ctrl+Shift+N (só em build de desenvolvimento) apaga o save e recomeça.
+## (definir_checkpoint) e ao fechar a janela. O jogo abre no menu inicial
+## (jogo/telas/menu_inicial.tscn): "Continuar" volta ao checkpoint do save e
+## "Novo jogo" apaga o save. Ctrl+Shift+N (só em build de desenvolvimento)
+## apaga o save e recomeça. Esc abre a pausa (jogo/telas/pausa.gd); o abraço
+## no filho termina o jogo com os créditos (jogo/telas/creditos.gd).
 
 signal inventario_mudou
 signal armas_mudou
@@ -76,13 +79,19 @@ var _tela_fim: CanvasLayer
 const VERSAO_SAVE := 1
 ## Onde o save fica. Os testes trocam por outro arquivo.
 var caminho_save := "user://save.json"
-## true entre carregar o save na abertura e o primeiro andar abrir.
-var _save_pendente := false
+
+## Primeira tela (cena principal do projeto) e onde começa um jogo novo.
+const CENA_MENU := "res://jogo/telas/menu_inicial.tscn"
+const CENA_PRIMEIRO_ANDAR := "res://andares/andar1.tscn"
 
 var _hud: CanvasLayer
 var _livro: CanvasLayer
 var _inv: CanvasLayer
 var _morrendo := false
+var _pausa: CanvasLayer
+var _creditos: CanvasLayer
+## true do abraço no filho até os créditos acabarem.
+var _fim_jogo := false
 
 var _fade: ColorRect
 var _titulo: Label
@@ -163,17 +172,18 @@ func _ready() -> void:
 	add_child(_inv)
 	_tela_fim = preload("res://jogo/fim_filho.gd").new()
 	add_child(_tela_fim)
+	_pausa = preload("res://jogo/telas/pausa.gd").new()  # aplica o volume salvo
+	_pausa.name = "Pausa"
+	add_child(_pausa)
+	_creditos = preload("res://jogo/telas/creditos.gd").new()
+	_creditos.name = "Creditos"
+	add_child(_creditos)
 
 	# Fechar a janela passa por _notification (salva antes de sair).
 	get_tree().set_auto_accept_quit(false)
-	# Continua do save. Quem decide a troca de andar é o primeiro andar que
-	# abrir (andar.gd chama continuar_save()). Se o checkpoint for de outro
-	# andar, a tela já começa preta para o 1º andar não piscar antes da troca.
-	if carregar():
-		_save_pendente = true
-		if checkpoint.get("cena", "") not in ["", _cena_principal()]:
-			_fade.color.a = 1.0
-	_sem_andar_na_abertura.call_deferred()
+	# Carrega o save já na abertura: o menu usa para o "Continuar", e rodar um
+	# andar solto no editor (F6) começa com o estado salvo.
+	carregar()
 
 
 func _notification(what: int) -> void:
@@ -184,7 +194,8 @@ func _notification(what: int) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if not event.is_pressed() or event.is_echo() or _fim_filho:
+	if not event.is_pressed() or event.is_echo() or _fim_filho or _fim_jogo \
+			or _pausa.visible or _creditos.visible:
 		return
 	if OS.is_debug_build() and event is InputEventKey and event.keycode == KEY_N \
 			and event.ctrl_pressed and event.shift_pressed:
@@ -218,6 +229,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		equipar_slot(2)
 	elif event.is_action("curar"):
 		usar_curativo()
+	elif event.is_action("ui_cancel"):
+		_pausa.abrir()
 	else:
 		return
 	get_viewport().set_input_as_handled()
@@ -462,43 +475,9 @@ func _migrar_save(dados: Dictionary, _versao: int) -> Dictionary:
 	return dados
 
 
-## Chamado pelo andar.gd no começo do _ready. Na abertura do jogo pela cena
-## principal, se o checkpoint salvo é de outro andar, troca para ele e devolve
-## true (o andar que abriu não deve fazer mais nada). No mesmo andar, devolve
-## false e o andar.gd põe o Pai no checkpoint como sempre. Rodar uma cena
-## solta (F6) carrega o estado, mas não troca de andar.
-func continuar_save(cena_do_andar: String) -> bool:
-	if not _save_pendente:
-		return false
-	_save_pendente = false
-	var alvo: String = checkpoint.get("cena", "")
-	if cena_do_andar != _cena_principal() or alvo in ["", cena_do_andar] \
-			or not ResourceLoader.exists(alvo):
-		_fade.color.a = 0.0
-		return false
-	_ir_para_save.call_deferred(alvo)
-	return true
-
-
-func _ir_para_save(alvo: String) -> void:
-	_trocando = true
-	get_tree().change_scene_to_file(alvo)
-	await get_tree().process_frame
-	await get_tree().process_frame
-	await fade(0.0, 0.45)
-	_trocando = false
-
-
-## Abriu uma cena que não é andar (ex.: teste): não deixa a tela preta.
-func _sem_andar_na_abertura() -> void:
-	if _save_pendente:
-		_save_pendente = false
-		_fade.color.a = 0.0
-
-
-## Apaga o save e recomeça do 1º andar (Ctrl+Shift+N em desenvolvimento;
-## depois vai para o botão "Novo jogo" da tela inicial). `mensagem` vazia =
-## não mostra nada ao recomeçar.
+## Apaga o save e recomeça do 1º andar (botão "Novo jogo" do menu inicial e
+## Ctrl+Shift+N em desenvolvimento). `mensagem` vazia = não mostra nada ao
+## recomeçar.
 func novo_jogo(mensagem := "Novo jogo (save apagado).") -> void:
 	if _trocando:
 		return
@@ -507,28 +486,103 @@ func novo_jogo(mensagem := "Novo jogo (save apagado).") -> void:
 		_livro.fechar()
 	if _inv.visible:
 		_inv.fechar()
+	if _pausa.visible:
+		_pausa.fechar()
 	apagar_save()
 	await fade(1.0, 0.35)
 	_estado_inicial()
 	inventario_mudou.emit()
 	armas_mudou.emit()
 	get_tree().paused = false
-	get_tree().change_scene_to_file(_cena_principal())
+	get_tree().change_scene_to_file(CENA_PRIMEIRO_ANDAR)
 	await get_tree().process_frame
 	await get_tree().process_frame
 	_morrendo = false
 	_fim_filho = false
+	_fim_jogo = false
 	await fade(0.0, 0.45)
 	_trocando = false
 	if mensagem != "":
 		mostrar_mensagem(mensagem)
 
 
-func _cena_principal() -> String:
-	var s: String = ProjectSettings.get_setting("application/run/main_scene", "")
-	if s.begins_with("uid://"):
-		return ResourceUID.get_id_path(ResourceUID.text_to_id(s))
-	return s
+## "Continuar" do menu: relê o save e vai para o andar do checkpoint (o
+## andar.gd põe o Pai no ponto salvo). Save ilegível: começa do 1º andar.
+func continuar_jogo() -> void:
+	if _trocando:
+		return
+	if not carregar():
+		_estado_inicial()
+		inventario_mudou.emit()
+		armas_mudou.emit()
+	var alvo: String = checkpoint.get("cena", "")
+	if alvo == "" or not ResourceLoader.exists(alvo):
+		alvo = CENA_PRIMEIRO_ANDAR
+	await _ir_para(alvo)
+
+
+## "Menu inicial" da pausa (e o fim dos créditos do fim do jogo): salva como
+## ao fechar a janela e volta para o menu.
+func ir_para_menu() -> void:
+	if _trocando:
+		return
+	if not checkpoint.is_empty():
+		salvar()
+	if _pausa.visible:
+		_pausa.fechar()
+	if _livro.visible:
+		_livro.fechar()
+	if _inv.visible:
+		_inv.fechar()
+	esconder_texto()
+	esconder_dica()
+	await _ir_para(CENA_MENU)
+
+
+## "Sair do jogo" da pausa: salva como ao fechar a janela.
+func sair_do_jogo() -> void:
+	if not checkpoint.is_empty():
+		salvar()
+	get_tree().quit()
+
+
+## Escurece, troca de cena e clareia (sem escada de chegada).
+func _ir_para(cena: String) -> void:
+	_trocando = true
+	await fade(1.0, 0.45)
+	get_tree().paused = false
+	get_tree().change_scene_to_file(cena)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	_morrendo = false
+	await fade(0.0, 0.45)
+	_trocando = false
+
+
+## Créditos subindo. `fim_de_jogo` = vieram do abraço no filho: o jogo fica
+## pausado por baixo e, quando acabam, volta ao menu inicial.
+func mostrar_creditos(fim_de_jogo := false) -> void:
+	if _creditos.visible:
+		return
+	if fim_de_jogo:
+		get_tree().paused = true
+	await _creditos.mostrar()
+	if fim_de_jogo:
+		_fade.color.a = 1.0
+		await _ir_para(CENA_MENU)
+		_fim_jogo = false
+
+
+## Fim do jogo (filho.gd, depois do abraço): um instante, a tela escurece e
+## sobem os créditos; depois, o menu inicial.
+func terminar_jogo() -> void:
+	if _fim_jogo:
+		return
+	_fim_jogo = true
+	await get_tree().create_timer(1.5).timeout
+	esconder_dica()
+	await fade(1.0, 1.2)
+	await mostrar_creditos(true)
 
 
 func _conjunto(lista: Array) -> Dictionary:
@@ -763,6 +817,11 @@ func pai_levou_dano(qtd: int) -> void:
 ## 1 = luz cheia, 0 = apagada.
 func fracao_luz_filho() -> float:
 	return luz_filho / TEMPO_LUZ_FILHO
+
+
+## O jogo já foi zerado (o Pai abraçou o filho)? O menu esconde o Continuar.
+func jogo_zerado() -> bool:
+	return get_flag("filho_resgatado", false)
 
 
 ## O filho já saiu da bolha (o chefe caiu)? Daí a luz não cai mais.

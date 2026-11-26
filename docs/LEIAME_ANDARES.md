@@ -1,6 +1,6 @@
 # Andares, salas, portas e escadas
 
-Testado no Godot 4.7.1. Comece pelo `andares/andar1.tscn` (1º andar). A escada da direita leva ao `andares/andar2.tscn`.
+Testado no Godot 4.7.1. O jogo abre no menu inicial (`jogo/telas/menu_inicial.tscn`, a cena principal). Para testar um andar direto, abra o `andares/andar1.tscn` (1º andar) e rode com F6. A escada da direita leva ao `andares/andar2.tscn`.
 
 ## Pastas do projeto
 
@@ -59,7 +59,7 @@ Para mover arquivos depois, faça isso **pelo FileSystem do editor do Godot**: e
 
 **Posição de uma porta comum:** para um vão de 2 tiles nas colunas X e X+1, com o arco na linha L, a posição é `(X*16+16, L*16+19)`.
 
-**Batente (`mundo/portas/batente.gd`):** cada porta e portão tem um nó `Batente` com o arco de pedra (`mundo/portas/batente.png`). Ao abrir a cena, ele também copia os tiles de parede logo acima da porta (camadas `Map/wall` e `wall2`). O nó fica na linha de y-sort perto da base da parede, então o Pai passa por trás do arco e da parede de cima ao atravessar o vão.
+**Batente (`mundo/portas/batente.gd`):** cada porta e portão tem um nó `Batente` com o arco de pedra (`mundo/portas/batente.png`). Ao abrir a cena, ele também copia os tiles de parede emendados acima da porta (camadas `Map/wall` e `wall2`), parando na primeira linha sem parede: numa sala baixa (Refúgio, Sala 1), copiar além disso pegava a parede do fundo da sala e a desenhava na frente do baú e do Pai. O nó fica na linha de y-sort perto da base da parede, então o Pai passa por trás do arco e da parede de cima ao atravessar o vão.
 
 **Portas novas no 1º andar:**
 - sala nordeste;
@@ -275,6 +275,35 @@ Nenhum monstro morre com 1 golpe, nem com a arma mais forte contra ele (por isso
 
 O Cajado de fogo usa `assets/staffs/6.png`. A ordem natural é: aranhas → teias → lança → Bruxa → cajado → Frankie.
 
+### Arma certa para cada monstro do 2º andar
+
+Mesma regra do 1º andar: a arma forte mata em 2 golpes e as outras armas da época em 3 ou mais. Para isso, as vidas da Aranha grande (8 → 9), da Criatura mágica (5 → 9), do Zumbi (8 → 12) e do Demônio (10 → 13) subiram em `Itens.INIMIGOS`.
+
+| Monstro | Arma mais forte | Dano contra ele | Como conseguir a arma |
+|---|---|---|---|
+| Aranha grande (vida 9) | Adaga venenosa | 2 + 3 = 5, mais veneno (2 golpes; clava e espada, 3) | página no Depósito; a aranha grande solta 2 presas (garantidas) |
+| Criatura mágica (vida 9) | Lança de teia | 3 + 2 = 5 (2 golpes; clava, 3) | já vem no livro |
+| Esqueleto (vida 12) | Clava de osso | 4 + 3 = 7 (2 golpes) | já vem no livro |
+| Zumbi (vida 12) | Machado sombrio | 6 + 3 = 9, golpe em área (2 golpes; clava e espada, 3) | página no Porão: 1 fragmento + 3 ossos + 2 sucatas |
+| Demônio (vida 13) | Espada espectral | 4 + 3 = 7 (2 golpes; machado e lâmina, 3) | página na Arena central; os 4 ectoplasmas vêm do baú do Depósito |
+| Feiticeiro espectral (vida 20) | Lâmina de luz | 6 + 2 = 8 (3 golpes; machado, 4; espada, 5) | página no Refúgio; o baú do Refúgio completa os materiais |
+
+- A Espada **não** tem bônus contra o Feiticeiro: com ela antes do chefe, a luta ficaria fácil demais.
+- O livro de receitas e o inventário mostram "Forte contra" lendo o `bonus` de `Itens.ARMAS`. Mudou o bônus, mudou o texto. O `efeito` das receitas não repete a fraqueza.
+
+### Baús (`mundo/bau/bau.gd`, campo `itens`)
+
+O baú solta sempre os mesmos itens no chão, à frente dele, ao abrir com **E**. Eles fecham a conta das receitas que o mapa sozinho não paga. A flag de cada baú vai no save (aberto continua aberto).
+
+| Baú | Itens | Para quê | Flag |
+|---|---|---|---|
+| Sala 1 (1º andar) | 2 teias, 1 maçã | o andar só tem 3 teias e a Lança gasta as 3: sem o baú não sobra para o curativo | `bau_sala1_aberto` |
+| Depósito (2º andar) | 4 ectoplasmas | Espada espectral (antes, o único ectoplasma era o do chefe) | `bau_deposito_aberto` |
+| Refúgio (2º andar) | 1 ectoplasma, 2 fragmentos, 1 pó mágico | o que falta para a Lâmina de luz antes do chefe | `bau_refugio_aberto` |
+
+- Mensagem vazia com `itens` = o baú lista o que saiu ("No baú: 2 Teia resistente, 1 Maçã.").
+- O baú da Sala 1 deixou de ser a animação em laço: é um `Sprite2D` com os quadros fechado e aberto da mesma folha (`assets/tile/PNG/doors_lever_chest_animation.png`).
+
 | Quem | Cura que solta |
 |---|---|
 | Caixas e barris | maçã (20%) |
@@ -349,7 +378,8 @@ A bruxa é a **Wizard sheet** de GandalfHardcore (`bruxa/Wizard sheet.png`, quad
 - **Morte:** o Pai volta para o último ponto de salvamento (começo do andar ou última sala vencida), com vida cheia e sem perder materiais.
 - **Drops:** monstros, caixas e barris soltam materiais; o Pai pega passando por cima. Todo sprite em `Props` cujo nome começa com "caixa" ou "barril" vira quebrável (`jogo/quebravel.gd`).
 - **Cura no chão** (`Itens.CURAS`): a **maçã** (cura 1) e a **poção de vida** (cura 3) curam na hora em que o Pai passa por cima e não vão para o inventário (`coletavel.gd` chama `pai.curar()`). O curativo continua sendo feito no livro e usado com Q. Sprites: `assets/itens-armas/warrior-items__asset.png`.
-- **Receitas novas:** um bilhete com o campo `receita` preenchido é uma página do livro (no 2º andar, a página do Depósito libera a Adaga venenosa). Derrotar a criatura mágica libera a Luz reforçada, e o feiticeiro, a Espada espectral.
+- **Receitas novas:** um bilhete com o campo `receita` preenchido é uma página do livro. No 2º andar: Adaga venenosa (Depósito), Machado sombrio (Porão), Espada espectral (Arena central) e Lâmina de luz (Refúgio). Derrotar a criatura mágica libera a Luz reforçada.
+- **Livro de receitas:** a página da direita mostra o dano (e o dano por segundo), o alcance e a abertura do golpe, o veneno, contra quem a arma é forte e a diferença de dano por segundo para a arma equipada (verde = melhor). Em cada material que falta aparece de onde ele vem (`onde` em `Itens.MATERIAIS`). Quando não cabe tudo, a página rola (roda do mouse ou PgUp/PgDn) e uma setinha avisa.
 - **HUD** (`jogo/hud.gd`) e **livro/inventário** (`jogo/livro.gd`) são criados pelo autoload `Jogo`.
 
 ## Autoload `Jogo` (`jogo/jogo.gd`)
@@ -369,8 +399,8 @@ A bruxa é a **Wizard sheet** de GandalfHardcore (`bruxa/Wizard sheet.png`, quad
 - **Quando grava:**
   - sempre que o checkpoint muda (`Jogo.definir_checkpoint()`): primeira entrada num andar, chegada por escada e sala-arena vencida;
   - ao fechar a janela. O Pai volta ao último checkpoint, mas o que ele pegou depois disso fica.
-- **Ao abrir o jogo:** se houver save, continua dele. Se o checkpoint for de outro andar, o jogo já abre nesse andar. Rodar uma cena solta (F6) carrega o estado, mas não troca de andar.
-- **Novo jogo:** ainda não há tela inicial. Em desenvolvimento, **Ctrl+Shift+N** apaga o save e recomeça no 1º andar. Esse atalho não existe no jogo exportado.
+- **Ao abrir o jogo:** o menu inicial aparece. **Continuar** (só existe com save) relê o save e vai para o andar do checkpoint. Rodar um andar solto (F6) carrega o estado do save, mas não troca de andar.
+- **Novo jogo:** o botão do menu apaga o save (pede confirmação se houver um) e começa no 1º andar. Em desenvolvimento, **Ctrl+Shift+N** faz o mesmo de qualquer tela. Esse atalho não existe no jogo exportado.
 - **Flags:** `Jogo.set_flag("alavanca_porao", true)` e `Jogo.get_flag("alavanca_porao", false)`. Use valores simples (bool, número ou texto). Elas entram no próximo save.
 - **Versão:** `VERSAO_SAVE` (hoje 1). Um save de versão mais nova que o jogo não é carregado nem apagado. Para mudar o formato, suba a versão e trate a diferença em `_migrar_save()`.
 - Um save ilegível não trava o jogo: ele começa do zero e avisa no console.
@@ -394,7 +424,7 @@ A bruxa é a **Wizard sheet** de GandalfHardcore (`bruxa/Wizard sheet.png`, quad
 - **Monstros** (`inimigo.gd`):
   - `altura_pes` põe a origem nos pés;
   - `largura_corpo` cria a colisão do corpo;
-  - fantasmas e o feiticeiro não bloqueiam, porque atravessam paredes.
+  - fantasmas não bloqueiam, porque atravessam paredes. O feiticeiro (chefe) colide com as paredes como a Bruxa: atravessando, ele recuava para fora do mapa.
 - **Muretas das escadinhas:** as laterais das duas escadinhas com mureta são bloqueadas pelo nó `Colisoes/muretas das escadas`.
 
 ## Livro de receitas (`jogo/livro.gd`)
@@ -408,3 +438,30 @@ A bruxa é a **Wizard sheet** de GandalfHardcore (`bruxa/Wizard sheet.png`, quad
 - Fitas na lateral filtram por categoria (todas, armas, cura, melhorias).
 - Teclado: setas cima/baixo escolhem, esquerda/direita trocam a fita, Enter/Espaço criam, R/Esc fecham.
 - O livro é desenhado em 428x242 pixels e ampliado pela maior escala inteira que cabe na janela.
+
+## Telas: menu inicial, pausa e créditos (`jogo/telas/`)
+
+Todas usam o tema parchment do Pixel UI Fantasy, como o livro: são montadas num espaço de 428×242 e ampliadas pela maior escala inteira que cabe na janela (`tela_pixel.gd`, a base das três).
+
+| Tela | Como abre | O que tem |
+|---|---|---|
+| Menu inicial (`menu_inicial.tscn`) | é a cena principal do projeto | Novo jogo, Continuar (só com save de um jogo ainda não zerado: depois do abraço no filho, o save só levaria ao Santuário vazio), Créditos e Sair. Novo jogo com save pede confirmação ("Voltar" é o padrão). Toca a música do 1º andar. |
+| Pausa (`pausa.gd`) | **Esc** durante o jogo (o `Jogo` cria) | o jogo para; mostra as teclas e o volume Geral, Música e Efeitos (barramentos `Master`, `Musica` e `Efeitos`). Botões: Continuar, Menu inicial (salva antes) e Sair do jogo (salva antes). Esc fecha. |
+| Créditos (`creditos.gd`) | botão do menu, e sozinho no fim do jogo | sobem pela tela: o grupo, sons, a arte de terceiros e "Obrigado por jogar". Esc, Enter ou clique pulam. |
+
+- **Volume:** fica em `user://config.cfg` (não no save; sobrevive a um Novo jogo) e é aplicado ao abrir o jogo.
+- **Fim do jogo:** ao fechar o texto do reencontro com o filho (flag `filho_resgatado`), `Jogo.terminar_jogo()` escurece a tela, rola os créditos e volta ao menu. Quando a fuga depois do chefe existir, é só chamar `terminar_jogo()` no fim dela, no lugar do `filho.gd`.
+- **Arte nos créditos:** a lista fica em `ARTE`, no começo do `creditos.gd` (`[obra, autor, licença]`). Pacote novo em `assets/` com licença que pede crédito entra ali.
+
+## Gerar o executável (Windows)
+
+O preset fica no repositório (`export_presets.cfg`, "Windows Desktop"): um `.exe` só, com o jogo embutido (`embed_pck`), em `build/RescueMe.exe` (a pasta `build/` não vai para o git).
+
+1. No Godot: **Editor > Manage Export Templates > Download and Install** (uma vez, na mesma versão do editor).
+2. **Project > Export > Windows Desktop > Export Project** (desmarque "Export With Debug").
+3. Ou pela linha de comando: `Godot_v4.7.1-stable_win64_console.exe --headless --path . --export-release "Windows Desktop" build/RescueMe.exe`.
+
+- Ficam de fora do `.exe`: `_nao_usados/`, `docs/`, `assets/_originais/` e o gerador de sons (`exclude_filter` do preset).
+- O ícone e os dados do `.exe` (nome, versão) só mudam com o rcedit configurado no Godot (Editor Settings > Export > Windows). Sem ele, `application/modify_resources` fica desligado e o `.exe` usa o ícone padrão do Godot.
+- O save do jogo exportado fica em `%APPDATA%\Godot\app_userdata\RescueMe\`.
+

@@ -112,7 +112,7 @@ var _anim_base := ""
 var _alertado := false
 var _agente: NavigationAgent2D
 var _recalcular := 0.0
-## Sem colisão (fantasmas, feiticeiro): vai direto, atravessando tudo.
+## Sem colisão (fantasmas): vai direto, atravessando tudo.
 var _atravessa := false
 var _perseguindo := false
 ## Revezamento do ataque em grupo (ver _tem_vez).

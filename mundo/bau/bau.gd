@@ -4,6 +4,9 @@ extends Sprite2D
 ## subindo, marca as flags no Jogo e salva na hora.
 ## Usa uma região da textura (region_enabled) para cada estado.
 ## Ex.: o baú da tumba (SalaSul) dá a chave do Nordeste e acorda os esqueletos.
+## Com `itens`, o baú solta esses materiais (ou curas) no chão à frente dele,
+## sempre os mesmos. Eles ficam em Jogo.drops como qualquer drop: se o Pai não
+## pegar, continuam lá ao voltar para o andar.
 
 ## Região da textura com o baú fechado e com o baú aberto.
 @export var regiao_fechado := Rect2(151, 20, 19, 18)
@@ -13,7 +16,10 @@ extends Sprite2D
 @export var flag_aberto := "tumba_aberta"
 ## Flag do item que o baú dá (ex.: "chave_nordeste"). Vazio = nenhum.
 @export var flag_recompensa := "chave_nordeste"
+## Mensagem ao abrir. Vazia com `itens` = lista o que saiu ("No baú: 2 Teia resistente...").
 @export var mensagem := "Você encontrou uma chave enferrujada."
+## O que o baú solta ao abrir: id do material em Itens.MATERIAIS -> quantidade.
+@export var itens: Dictionary[String, int] = {}
 ## Desenho do item que sobe do baú ao abrir (opcional).
 @export var textura_recompensa: Texture2D
 @export var regiao_recompensa := Rect2(274, 64, 12, 8)
@@ -70,15 +76,17 @@ func abrir() -> void:
 	Jogo.esconder_dica()
 	_mostrar(true)
 	Som.tocar_em("mundo/bau_abrir", global_position)
-	if flag_recompensa != "":
+	if flag_recompensa != "" or not itens.is_empty():
 		get_tree().create_timer(0.35).timeout.connect(Som.tocar.bind("mundo/achado", 0.0, 1.0, 0.0))
 	if flag_aberto != "":
 		Jogo.set_flag(flag_aberto, true)
 	if flag_recompensa != "":
 		Jogo.set_flag(flag_recompensa, true)
+	_soltar_itens()
 	Jogo.salvar_progresso()
-	if mensagem != "":
-		Jogo.mostrar_mensagem(mensagem, 3.0)
+	var texto := mensagem if mensagem != "" or itens.is_empty() else _lista_itens()
+	if texto != "":
+		Jogo.mostrar_mensagem(texto, 3.0)
 	_item_subindo()
 
 
@@ -97,3 +105,20 @@ func _item_subindo() -> void:
 	tw.tween_property(s, "position:y", s.position.y - 14.0, 0.8).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	tw.parallel().tween_property(s, "modulate:a", 0.0, 0.5).set_delay(0.9)
 	tw.tween_callback(s.queue_free)
+
+
+## Os itens caem um pouco à frente do baú, separados, com o pulinho dos drops.
+func _soltar_itens() -> void:
+	var frente := global_position + Vector2(0, 12)
+	for id in itens:
+		if not Itens.MATERIAIS.has(id):
+			push_warning("Baú %s: item desconhecido \"%s\"" % [name, id])
+			continue
+		Coletavel.soltar(get_parent(), frente, id, itens[id])
+
+
+func _lista_itens() -> String:
+	var partes: Array[String] = []
+	for id in itens:
+		partes.append("%d %s" % [itens[id], Itens.nome_material(id)])
+	return "No baú: " + ", ".join(partes) + "."

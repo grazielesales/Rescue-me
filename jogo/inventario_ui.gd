@@ -160,6 +160,15 @@ func _usar() -> void:
 		return
 	if _selecionado.equip_indice >= 0:
 		Jogo.equipar_slot(_selecionado.equip_indice)
+	elif _selecionado.tipo == "arma":
+		# arma da grade: vai para um atalho vazio ou, com os 3 cheios, troca a
+		# arma do atalho em uso (a que sai continua na grade)
+		var i := Jogo.slots.find(_selecionado.item)
+		if i == -1:
+			i = Jogo.slots.find("")
+		if i == -1:
+			i = Jogo.slot_atual
+		Jogo.colocar_no_slot(_selecionado.item, i)
 	elif _selecionado.item == "curativo":
 		Jogo.usar_curativo()
 
@@ -226,9 +235,14 @@ func _mostrar_info() -> void:
 		var linhas := [["Dano", str(a.dano)], ["Alcance", str(int(a.alcance))], ["Velocidade", _velocidade(a.recarga)]]
 		if a.has("veneno"):
 			linhas.append(["Veneno", "%d s" % a.veneno])
+		if a.get("angulo", 0.0) >= 120.0:
+			linhas.append(["Golpe", "em área"])
+		var forte := Itens.forte_contra(id)
+		if forte != "":
+			linhas.append(["Forte contra", forte])
 		_status(linhas)
 		var no_atalho := Jogo.slots.find(id)
-		var dica := "[1] [2] [3] colocar no atalho"
+		var dica := "[E] equipar   [1] [2] [3] escolher o atalho"
 		if s.equip_indice >= 0:
 			dica = "[E] equipar agora"
 		elif no_atalho != -1:
@@ -239,6 +253,8 @@ func _mostrar_info() -> void:
 		_info_tipo.text = "ITEM DE CURA" if id == "curativo" else "MATERIAL"
 		_info_desc.text = DESCRICOES.get(id, "")
 		var linhas := [["Quantidade", "x%d" % s.quantidade]]
+		if Itens.onde_achar(id) != "":
+			linhas.append(["Onde achar", Itens.onde_achar(id)])
 		if id == "curativo":
 			linhas.append(["Recupera", "%d de vida" % Itens.CURA])
 			_info_acoes.text = "[E] usar"
