@@ -1,6 +1,6 @@
 # Andares, salas, portas e escadas
 
-Testado no Godot 4.7.1. Comece pelo `andares/andar1.tscn` (1º andar). A escada da direita leva ao `andares/andar2.tscn`.
+Testado no Godot 4.7.1. O jogo abre no menu inicial (`jogo/telas/menu_inicial.tscn`, a cena principal). Para testar um andar direto, abra o `andares/andar1.tscn` (1º andar) e rode com F6. A escada da direita leva ao `andares/andar2.tscn`.
 
 ## Pastas do projeto
 
@@ -399,8 +399,8 @@ A bruxa é a **Wizard sheet** de GandalfHardcore (`bruxa/Wizard sheet.png`, quad
 - **Quando grava:**
   - sempre que o checkpoint muda (`Jogo.definir_checkpoint()`): primeira entrada num andar, chegada por escada e sala-arena vencida;
   - ao fechar a janela. O Pai volta ao último checkpoint, mas o que ele pegou depois disso fica.
-- **Ao abrir o jogo:** se houver save, continua dele. Se o checkpoint for de outro andar, o jogo já abre nesse andar. Rodar uma cena solta (F6) carrega o estado, mas não troca de andar.
-- **Novo jogo:** ainda não há tela inicial. Em desenvolvimento, **Ctrl+Shift+N** apaga o save e recomeça no 1º andar. Esse atalho não existe no jogo exportado.
+- **Ao abrir o jogo:** o menu inicial aparece. **Continuar** (só existe com save) relê o save e vai para o andar do checkpoint. Rodar um andar solto (F6) carrega o estado do save, mas não troca de andar.
+- **Novo jogo:** o botão do menu apaga o save (pede confirmação se houver um) e começa no 1º andar. Em desenvolvimento, **Ctrl+Shift+N** faz o mesmo de qualquer tela. Esse atalho não existe no jogo exportado.
 - **Flags:** `Jogo.set_flag("alavanca_porao", true)` e `Jogo.get_flag("alavanca_porao", false)`. Use valores simples (bool, número ou texto). Elas entram no próximo save.
 - **Versão:** `VERSAO_SAVE` (hoje 1). Um save de versão mais nova que o jogo não é carregado nem apagado. Para mudar o formato, suba a versão e trate a diferença em `_migrar_save()`.
 - Um save ilegível não trava o jogo: ele começa do zero e avisa no console.
@@ -438,3 +438,30 @@ A bruxa é a **Wizard sheet** de GandalfHardcore (`bruxa/Wizard sheet.png`, quad
 - Fitas na lateral filtram por categoria (todas, armas, cura, melhorias).
 - Teclado: setas cima/baixo escolhem, esquerda/direita trocam a fita, Enter/Espaço criam, R/Esc fecham.
 - O livro é desenhado em 428x242 pixels e ampliado pela maior escala inteira que cabe na janela.
+
+## Telas: menu inicial, pausa e créditos (`jogo/telas/`)
+
+Todas usam o tema parchment do Pixel UI Fantasy, como o livro: são montadas num espaço de 428×242 e ampliadas pela maior escala inteira que cabe na janela (`tela_pixel.gd`, a base das três).
+
+| Tela | Como abre | O que tem |
+|---|---|---|
+| Menu inicial (`menu_inicial.tscn`) | é a cena principal do projeto | Novo jogo, Continuar (só com save), Créditos e Sair. Novo jogo com save pede confirmação ("Voltar" é o padrão). Toca a música do 1º andar. |
+| Pausa (`pausa.gd`) | **Esc** durante o jogo (o `Jogo` cria) | o jogo para; mostra as teclas e o volume Geral, Música e Efeitos (barramentos `Master`, `Musica` e `Efeitos`). Botões: Continuar, Menu inicial (salva antes) e Sair do jogo (salva antes). Esc fecha. |
+| Créditos (`creditos.gd`) | botão do menu, e sozinho no fim do jogo | sobem pela tela: o grupo, sons, a arte de terceiros e "Obrigado por jogar". Esc, Enter ou clique pulam. |
+
+- **Volume:** fica em `user://config.cfg` (não no save; sobrevive a um Novo jogo) e é aplicado ao abrir o jogo.
+- **Fim do jogo:** ao fechar o texto do reencontro com o filho (flag `filho_resgatado`), `Jogo.terminar_jogo()` escurece a tela, rola os créditos e volta ao menu. Quando a fuga depois do chefe existir, é só chamar `terminar_jogo()` no fim dela, no lugar do `filho.gd`.
+- **Arte nos créditos:** a lista fica em `ARTE`, no começo do `creditos.gd` (`[obra, autor, licença]`). Pacote novo em `assets/` com licença que pede crédito entra ali.
+
+## Gerar o executável (Windows)
+
+O preset fica no repositório (`export_presets.cfg`, "Windows Desktop"): um `.exe` só, com o jogo embutido (`embed_pck`), em `build/RescueMe.exe` (a pasta `build/` não vai para o git).
+
+1. No Godot: **Editor > Manage Export Templates > Download and Install** (uma vez, na mesma versão do editor).
+2. **Project > Export > Windows Desktop > Export Project** (desmarque "Export With Debug").
+3. Ou pela linha de comando: `Godot_v4.7.1-stable_win64_console.exe --headless --path . --export-release "Windows Desktop" build/RescueMe.exe`.
+
+- Ficam de fora do `.exe`: `_nao_usados/`, `docs/`, `assets/_originais/` e o gerador de sons (`exclude_filter` do preset).
+- O ícone e os dados do `.exe` (nome, versão) só mudam com o rcedit configurado no Godot (Editor Settings > Export > Windows). Sem ele, `application/modify_resources` fica desligado e o `.exe` usa o ícone padrão do Godot.
+- O save do jogo exportado fica em `%APPDATA%\Godot\app_userdata\RescueMe\`.
+

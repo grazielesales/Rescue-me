@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="RescueMe"
-run/main_scene="uid://b58mbenmkjpuu"
+run/main_scene="res://jogo/telas/menu_inicial.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 config/icon="res://icon.svg"
 

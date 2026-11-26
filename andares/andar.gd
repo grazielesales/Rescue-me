@@ -17,9 +17,6 @@ func _ready() -> void:
 	# o mapa claro; no jogo ela é ligada aqui.
 	for n in find_children("*", "CanvasModulate", false, false):
 		n.visible = true
-	# Abrindo o jogo com save de outro andar: o Jogo troca para lá.
-	if Jogo.continuar_save(scene_file_path):
-		return
 	Jogo.definir_andar(nome)
 	Musica.tocar_andar(musica if musica != "" else scene_file_path.get_file().get_basename())
 	_preparar_quebraveis()
