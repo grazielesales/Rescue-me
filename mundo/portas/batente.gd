@@ -12,7 +12,8 @@ extends Sprite2D
 ## "Map/topo das portas" (sem colisão, embaixo do arco) só existe no 2º andar; camada que falta é ignorada.
 ## "wall2" pode estar na raiz do andar ou dentro de Map: as duas são procuradas.
 @export var camadas_de_parede: Array[String] = ["Map/wall", "Map/topo das portas", "wall2", "Map/wall2"]
-## Quantas linhas de tile acima do arco são copiadas.
+## No máximo quantas linhas de tile acima do arco são copiadas (só a parede
+## emendada no arco: a cópia para na primeira linha sem parede).
 @export var linhas_acima := 3
 ## Colunas extras copiadas de cada lado do vão de 2 tiles.
 @export var colunas_extras := 1
@@ -42,9 +43,15 @@ func _copiar_parede() -> void:
 		copia.navigation_enabled = false
 		copia.show_behind_parent = true  # o arco fica por cima da parede
 		var algum := false
-		for y in range(linha_arco - linhas_acima, linha_arco + 1):
-			for x in range(c.x - 1 - colunas_extras, c.x + colunas_extras + 1):
+		for x in range(c.x - 1 - colunas_extras, c.x + colunas_extras + 1):
+			# de baixo para cima, só a parede emendada no arco: para no primeiro
+			# buraco (chão). Sem isso, numa sala baixa (Refúgio, Sala 1) a cópia
+			# pegava a parede do FUNDO da sala e a desenhava na linha da porta,
+			# por cima do que está lá dentro (baú, móveis e o próprio Pai).
+			for y in range(linha_arco, linha_arco - linhas_acima - 1, -1):
 				var p := Vector2i(x, y)
+				if not _tem_parede(andar, centro, p - c):
+					break
 				var fonte := origem.get_cell_source_id(p)
 				if fonte == -1:
 					continue
@@ -55,6 +62,18 @@ func _copiar_parede() -> void:
 			continue
 		add_child(copia)
 		copia.global_transform = origem.global_transform
+
+
+## Alguma das camadas de parede tem tile na célula `desvio` (relativa à
+## célula do centro da porta em cada camada)?
+func _tem_parede(andar: Node, centro: Vector2, desvio: Vector2i) -> bool:
+	for caminho in camadas_de_parede:
+		var t := andar.get_node_or_null(caminho) as TileMapLayer
+		if t == null or not t.visible:
+			continue
+		if t.get_cell_source_id(t.local_to_map(t.to_local(centro)) + desvio) != -1:
+			return true
+	return false
 
 
 func _achar_andar() -> Node:

@@ -59,7 +59,7 @@ Para mover arquivos depois, faça isso **pelo FileSystem do editor do Godot**: e
 
 **Posição de uma porta comum:** para um vão de 2 tiles nas colunas X e X+1, com o arco na linha L, a posição é `(X*16+16, L*16+19)`.
 
-**Batente (`mundo/portas/batente.gd`):** cada porta e portão tem um nó `Batente` com o arco de pedra (`mundo/portas/batente.png`). Ao abrir a cena, ele também copia os tiles de parede logo acima da porta (camadas `Map/wall` e `wall2`). O nó fica na linha de y-sort perto da base da parede, então o Pai passa por trás do arco e da parede de cima ao atravessar o vão.
+**Batente (`mundo/portas/batente.gd`):** cada porta e portão tem um nó `Batente` com o arco de pedra (`mundo/portas/batente.png`). Ao abrir a cena, ele também copia os tiles de parede emendados acima da porta (camadas `Map/wall` e `wall2`), parando na primeira linha sem parede: numa sala baixa (Refúgio, Sala 1), copiar além disso pegava a parede do fundo da sala e a desenhava na frente do baú e do Pai. O nó fica na linha de y-sort perto da base da parede, então o Pai passa por trás do arco e da parede de cima ao atravessar o vão.
 
 **Portas novas no 1º andar:**
 - sala nordeste;
@@ -424,7 +424,7 @@ A bruxa é a **Wizard sheet** de GandalfHardcore (`bruxa/Wizard sheet.png`, quad
 - **Monstros** (`inimigo.gd`):
   - `altura_pes` põe a origem nos pés;
   - `largura_corpo` cria a colisão do corpo;
-  - fantasmas e o feiticeiro não bloqueiam, porque atravessam paredes.
+  - fantasmas não bloqueiam, porque atravessam paredes. O feiticeiro (chefe) colide com as paredes como a Bruxa: atravessando, ele recuava para fora do mapa.
 - **Muretas das escadinhas:** as laterais das duas escadinhas com mureta são bloqueadas pelo nó `Colisoes/muretas das escadas`.
 
 ## Livro de receitas (`jogo/livro.gd`)

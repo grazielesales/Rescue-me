@@ -166,18 +166,20 @@ animations = [{
 }]
 
 [node name="feiticeiro_espectral" type="CharacterBody2D"]
-collision_layer = 0
-collision_mask = 0
+editor_description = "Chefe do 2º andar. Colide com paredes e usa a malha de navegação, como a Bruxa: atravessando paredes, ele recuava para fora do mapa e não dava para matá-lo."
 script = ExtResource("script")
 tipo = "Feiticeiro espectral"
 flutuar = true
 altura_pes = 21.0
+largura_corpo = 10.0
 sprite_olha_direita = false
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 scale = Vector2(0.75, 0.75)
 sprite_frames = SubResource("frames")
 animation = &"idle"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 
 [node name="Brilho" type="PointLight2D" parent="."]
 position = Vector2(0, -12)

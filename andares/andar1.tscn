@@ -4786,15 +4786,14 @@ position = Vector2(327, -150)
 
 [node name="baú" type="Sprite2D" parent="Props" unique_id=967800748]
 editor_description = "Baú da Sala 1 (bau.gd): E abre e solta 2 teias e 1 maçã (fecha a conta da Lança + curativo no 1º andar). Flag bau_sala1_aberto."
-top_level = true
-position = Vector2(-318, -30)
+position = Vector2(9, -180)
 texture = ExtResource("6_s1flt")
 offset = Vector2(0, -8)
 region_enabled = true
 region_rect = Rect2(7, 132, 19, 18)
 script = ExtResource("55_bau")
 regiao_fechado = Rect2(7, 132, 19, 18)
-regiao_aberto = Rect2(7, 128, 19, 22)
+regiao_aberto = Rect2(135, 128, 19, 22)
 flag_aberto = "bau_sala1_aberto"
 flag_recompensa = ""
 mensagem = ""
