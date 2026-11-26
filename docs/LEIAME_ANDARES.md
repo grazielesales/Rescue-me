@@ -445,7 +445,7 @@ Todas usam o tema parchment do Pixel UI Fantasy, como o livro: são montadas num
 
 | Tela | Como abre | O que tem |
 |---|---|---|
-| Menu inicial (`menu_inicial.tscn`) | é a cena principal do projeto | Novo jogo, Continuar (só com save), Créditos e Sair. Novo jogo com save pede confirmação ("Voltar" é o padrão). Toca a música do 1º andar. |
+| Menu inicial (`menu_inicial.tscn`) | é a cena principal do projeto | Novo jogo, Continuar (só com save de um jogo ainda não zerado: depois do abraço no filho, o save só levaria ao Santuário vazio), Créditos e Sair. Novo jogo com save pede confirmação ("Voltar" é o padrão). Toca a música do 1º andar. |
 | Pausa (`pausa.gd`) | **Esc** durante o jogo (o `Jogo` cria) | o jogo para; mostra as teclas e o volume Geral, Música e Efeitos (barramentos `Master`, `Musica` e `Efeitos`). Botões: Continuar, Menu inicial (salva antes) e Sair do jogo (salva antes). Esc fecha. |
 | Créditos (`creditos.gd`) | botão do menu, e sozinho no fim do jogo | sobem pela tela: o grupo, sons, a arte de terceiros e "Obrigado por jogar". Esc, Enter ou clique pulam. |
 

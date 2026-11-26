@@ -1,6 +1,7 @@
 extends TelaPixel
 ## Menu inicial (primeira tela do jogo, a cena principal do projeto):
-## Novo jogo, Continuar (só aparece quando existe save), Créditos e Sair.
+## Novo jogo, Continuar (só aparece quando existe save de um jogo ainda não
+## zerado), Créditos e Sair.
 ## Novo jogo com save existente pede confirmação antes de apagar.
 ## Teclado: setas/WASD escolhem, Enter/Espaço confirmam, Esc fecha a pergunta.
 
@@ -43,7 +44,8 @@ func _ready() -> void:
 	_novo = _botao("Novo jogo", _novo_jogo)
 	_botoes.add_child(_novo)
 	_continuar = _botao("Continuar", _continuar_jogo)
-	_continuar.visible = Jogo.tem_save()
+	# depois de zerar, o save só leva ao Santuário vazio: só sobra o Novo jogo
+	_continuar.visible = Jogo.tem_save() and not Jogo.jogo_zerado()
 	_botoes.add_child(_continuar)
 	_botoes.add_child(_botao("Créditos", func(): Jogo.mostrar_creditos(false)))
 	_botoes.add_child(_botao("Sair", func(): get_tree().quit()))

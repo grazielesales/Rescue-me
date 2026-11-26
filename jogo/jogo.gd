@@ -819,6 +819,11 @@ func fracao_luz_filho() -> float:
 	return luz_filho / TEMPO_LUZ_FILHO
 
 
+## O jogo já foi zerado (o Pai abraçou o filho)? O menu esconde o Continuar.
+func jogo_zerado() -> bool:
+	return get_flag("filho_resgatado", false)
+
+
 ## O filho já saiu da bolha (o chefe caiu)? Daí a luz não cai mais.
 func filho_livre() -> bool:
 	return get_flag(FLAG_FILHO_LIVRE, false) or get_flag("filho_resgatado", false)
